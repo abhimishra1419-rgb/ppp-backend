@@ -10,8 +10,9 @@ const path    = require('path');
 const fs      = require('fs');
 
 const app        = express();
-const PORT       = 5000;
-const JWT_SECRET = 'printerpartspoint_secret_2025';
+const PORT       = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || 'printerpartspoint_secret_2025';
+const BASE_URL   = process.env.BASE_URL || ('http://localhost:' + PORT);
 const DB_FILE    = path.join(__dirname, 'database.json');
 
 app.use(cors({ origin: '*' }));
@@ -170,7 +171,7 @@ app.get('/api/products', (req, res) => {
     list = list.map(p => ({
       ...p,
       category_name: db.categories.find(c => c.id === p.category_id)?.name || '',
-      image_url: p.image ? 'http://localhost:' + PORT + p.image : null,
+      image_url: p.image ? BASE_URL + p.image : null,
     }));
     const total = list.length, offset = (parseInt(page)-1)*parseInt(limit);
     res.json({ products: list.slice(offset, offset+parseInt(limit)), total, page:parseInt(page), limit:parseInt(limit) });
@@ -183,7 +184,7 @@ app.get('/api/products/:id', (req, res) => {
   const p  = db.products.find(p => p.id === parseInt(req.params.id) && p.is_active);
   if (!p) return res.status(404).json({ error:'Product not found' });
   res.json({ ...p, category_name: db.categories.find(c=>c.id===p.category_id)?.name||'',
-    image_url: p.image ? 'http://localhost:'+PORT+p.image : null });
+    image_url: p.image ? BASE_URL + p.image : null });
 });
 
 // PRODUCTS - ADD (admin, with image upload)
