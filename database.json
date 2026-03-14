@@ -1,0 +1,145 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@printerpartspoint.in",
+      "phone": "9990774445",
+      "password": "$2a$10$xGohQl89ZAMTbzzEqyzdaO2johIbaEFkWA/HkzaC1ZRgX/SML.oVO",
+      "role": "admin",
+      "created_at": "2026-03-14T06:30:28.206Z"
+    },
+    {
+      "id": 2,
+      "name": "Abhishek Mishra",
+      "email": "am84548304@gmail.com",
+      "phone": "1234567890",
+      "password": "$2a$10$U5wH4U4vwWaqUBZIBR34bOAUcyxZwTtnypGYQv/LHRvgotMfLS7Fy",
+      "role": "customer",
+      "created_at": "2026-03-14T07:30:25.753Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Laser Printer Parts",
+      "slug": "laser",
+      "icon": "L",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "name": "DMP Printer Parts",
+      "slug": "dmp",
+      "icon": "D",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "name": "Inkjet Printer Parts",
+      "slug": "inkjet",
+      "icon": "I",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "name": "Scanner Parts",
+      "slug": "scanner",
+      "icon": "S",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "name": "Thermal/POS Printer Parts",
+      "slug": "thermal",
+      "icon": "T",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "name": "Toner Spare Parts",
+      "slug": "toner",
+      "icon": "N",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "name": "Complete Printer",
+      "slug": "complete",
+      "icon": "C",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "name": "Drum Units",
+      "slug": "drum",
+      "icon": "R",
+      "sort_order": 8
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "abhi",
+      "description": "gsdgjhdvjsc",
+      "sku": "12345678",
+      "category_id": 4,
+      "price": 2000,
+      "old_price": 3000,
+      "stock": 20,
+      "image": "/uploads/products/1773474126215-436731.jpeg",
+      "is_new": false,
+      "is_bestseller": false,
+      "is_active": true,
+      "created_at": "2026-03-14T07:42:06.240Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "order_number": "PPP1773470164999",
+      "user_id": 1,
+      "subtotal": 1949,
+      "gst": 350.82,
+      "total": 2299.82,
+      "shipping_address": "{\"name\":\"Rahul Sharma\",\"phone\":\"9876543210\",\"line\":\"123, Printer Lane\",\"city\":\"New Delhi\",\"pin\":\"110005\"}",
+      "payment_method": "cod",
+      "payment_status": "pending",
+      "status": "pending",
+      "tracking_number": null,
+      "notes": null,
+      "created_at": "2026-03-14T06:36:04.999Z"
+    }
+  ],
+  "order_items": [
+    {
+      "id": 1,
+      "order_id": 1,
+      "product_id": 1,
+      "qty": 1,
+      "price": 1949
+    }
+  ],
+  "enquiries": [],
+  "settings": {
+    "hero_title": "",
+    "hero_subtitle": "",
+    "hero_btn_primary": "",
+    "hero_btn_secondary": "",
+    "announcement_bar": "",
+    "whatsapp_banner_text": "",
+    "site_name": "",
+    "tagline": "",
+    "whatsapp_number": "9967137652",
+    "footer_email": "",
+    "footer_address": "",
+    "working_hours": "",
+    "free_shipping_min": 999,
+    "gst_rate": 18,
+    "meta_title": "",
+    "meta_description": "",
+    "show_categories": false,
+    "show_new_arrivals": false,
+    "show_best_sellers": false
+  }
+}
