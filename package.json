@@ -1,7 +1,7 @@
 {
   "name": "printerpartspoint-backend",
   "version": "1.0.0",
-  "description": "PrinterPartsPoint Backend - Pure JavaScript, No Compilation Needed",
+  "description": "Printerspareparts Backend - Pure JavaScript, No Compilation Needed",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
