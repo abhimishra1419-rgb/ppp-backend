@@ -405,6 +405,157 @@ app.post('/api/auth/login', async (req, res) => {
 const otpStore = new Map(); // key: email, value: { otp, expires, name }
 
 // STEP 1: Request OTP — user enters email or phone
+
+// ════════════════════════════════════════════════════════════════
+//   GOOGLE LOGIN — Verify Google ID token and login/register user
+// ════════════════════════════════════════════════════════════════
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { credential } = req.body; // Google ID token from frontend
+    if (!credential) return res.status(400).json({ error: 'No Google credential provided' });
+
+    // Verify token with Google's tokeninfo endpoint (no extra package needed)
+    const googleRes = await fetch(
+      'https://oauth2.googleapis.com/tokeninfo?id_token=' + credential
+    );
+    const googleData = await googleRes.json();
+
+    if (!googleRes.ok || googleData.error) {
+      return res.status(401).json({ error: 'Invalid Google token. Please try again.' });
+    }
+
+    // Check audience matches our Client ID
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+    if (GOOGLE_CLIENT_ID && googleData.aud !== GOOGLE_CLIENT_ID) {
+      return res.status(401).json({ error: 'Google token audience mismatch.' });
+    }
+
+    const email = googleData.email;
+    const name  = googleData.name || googleData.email.split('@')[0];
+    const googleId = googleData.sub;
+
+    if (!email) return res.status(400).json({ error: 'Could not get email from Google account' });
+
+    const db = readDB();
+
+    // Check if user already exists
+    let user = db.users.find(u => u.email === email);
+
+    if (user) {
+      // Existing user — update Google ID if not set
+      const idx = db.users.findIndex(u => u.email === email);
+      if (!db.users[idx].google_id) {
+        db.users[idx].google_id = googleId;
+        writeDB(db);
+      }
+      user = db.users[idx];
+    } else {
+      // New user — create account automatically (no password needed)
+      user = {
+        id:         nextId(db.users),
+        name:       sanitize(name),
+        email:      email.toLowerCase(),
+        phone:      null,
+        password:   null,        // no password for social login
+        google_id:  googleId,
+        role:       'customer',
+        addresses:  [],
+        created_at: new Date().toISOString(),
+      };
+      db.users.push(user);
+      writeDB(db);
+      console.log('New user via Google:', email);
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      is_new: !db.users.find(u => u.email === email && u.created_at !== user.created_at),
+    });
+  } catch(e) {
+    console.error('Google login error:', e);
+    res.status(500).json({ error: 'Google login failed. Please try again.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+//   FACEBOOK LOGIN — Verify Facebook access token
+// ════════════════════════════════════════════════════════════════
+app.post('/api/auth/facebook', async (req, res) => {
+  try {
+    const { accessToken, userID } = req.body;
+    if (!accessToken || !userID) return res.status(400).json({ error: 'No Facebook token provided' });
+
+    const FACEBOOK_APP_ID     = process.env.FACEBOOK_APP_ID     || '';
+    const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET || '';
+
+    // Verify token with Facebook Graph API
+    let verifyUrl = 'https://graph.facebook.com/debug_token?input_token=' + accessToken;
+    if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
+      verifyUrl += '&access_token=' + FACEBOOK_APP_ID + '|' + FACEBOOK_APP_SECRET;
+    }
+    const verifyRes  = await fetch(verifyUrl);
+    const verifyData = await verifyRes.json();
+
+    if (!verifyData.data || !verifyData.data.is_valid) {
+      return res.status(401).json({ error: 'Invalid Facebook token. Please try again.' });
+    }
+
+    // Get user info from Facebook
+    const fbUserRes  = await fetch('https://graph.facebook.com/' + userID + '?fields=id,name,email&access_token=' + accessToken);
+    const fbUserData = await fbUserRes.json();
+
+    if (!fbUserData.email) {
+      return res.status(400).json({ error: 'Facebook account does not have a public email. Please use email/password login.' });
+    }
+
+    const email      = fbUserData.email;
+    const name       = fbUserData.name || email.split('@')[0];
+    const facebookId = fbUserData.id;
+
+    const db = readDB();
+    let user = db.users.find(u => u.email === email);
+
+    if (user) {
+      const idx = db.users.findIndex(u => u.email === email);
+      if (!db.users[idx].facebook_id) { db.users[idx].facebook_id = facebookId; writeDB(db); }
+      user = db.users[idx];
+    } else {
+      user = {
+        id:          nextId(db.users),
+        name:        sanitize(name),
+        email:       email.toLowerCase(),
+        phone:       null,
+        password:    null,
+        facebook_id: facebookId,
+        role:        'customer',
+        addresses:   [],
+        created_at:  new Date().toISOString(),
+      };
+      db.users.push(user);
+      writeDB(db);
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch(e) {
+    console.error('Facebook login error:', e);
+    res.status(500).json({ error: 'Facebook login failed. Please try again.' });
+  }
+});
+
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
     const input = sanitize(req.body.email_or_phone || '').toLowerCase().trim();
