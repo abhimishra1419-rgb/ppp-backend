@@ -321,6 +321,122 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ token, user:{ id:user.id, name:user.name, email:user.email, role:user.role } });
   } catch(e) { res.status(500).json({ error:'Server error. Please try again.' }); }
 });
+// ════════════════════════════════════════════════════════════════
+//   FORGOT PASSWORD — OTP via Email
+// ════════════════════════════════════════════════════════════════
+
+// In-memory OTP store (resets on server restart — fine for Render)
+const otpStore = new Map(); // key: email, value: { otp, expires, name }
+
+// STEP 1: Request OTP — user enters email or phone
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const input = sanitize(req.body.email_or_phone || '').toLowerCase().trim();
+    if (!input) return res.status(400).json({ error: 'Please enter your email address or phone number' });
+    const db   = readDB();
+    // Find user by email or phone
+    const user = db.users.find(u =>
+      u.email === input ||
+      u.email === input.toLowerCase() ||
+      (u.phone && u.phone === input.replace(/\D/g,'').slice(-10))
+    );
+    if (!user) {
+      // Don't reveal if email exists — security best practice
+      return res.json({ message: 'If this account exists, an OTP has been sent to the registered email.' });
+    }
+    if (!user.email) {
+      return res.status(400).json({ error: 'No email address linked to this account. Please contact support on WhatsApp.' });
+    }
+    // Generate 6-digit OTP
+    const otp     = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    otpStore.set(user.email, { otp, expires, userId: user.id, name: user.name });
+    // Send OTP email
+    const emailHtml = `
+    <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto">
+      <div style="background:#1a4298;color:#fff;padding:24px;text-align:center;border-radius:12px 12px 0 0">
+        <h2 style="margin:0;font-size:22px">PrinterPartsPoint</h2>
+        <p style="margin:6px 0 0;opacity:.8">Password Reset OTP</p>
+      </div>
+      <div style="background:#f5f8ff;padding:28px;border-radius:0 0 12px 12px">
+        <p style="margin:0 0 16px">Hello <strong>${user.name}</strong>,</p>
+        <p style="margin:0 0 20px;color:#555">You requested to reset your password. Use this OTP to continue:</p>
+        <div style="background:#fff;border:2px solid #00b5d8;border-radius:12px;text-align:center;padding:20px;margin:20px 0">
+          <div style="font-size:40px;font-weight:800;letter-spacing:12px;color:#0d2c6b;font-family:monospace">${otp}</div>
+          <div style="font-size:13px;color:#888;margin-top:8px">Valid for 10 minutes only</div>
+        </div>
+        <p style="color:#e53e3e;font-size:13px;margin:0 0 16px">⚠️ Never share this OTP with anyone. PrinterPartsPoint will never ask for your OTP.</p>
+        <p style="color:#888;font-size:12px">If you did not request this, ignore this email. Your account is safe.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0"/>
+        <p style="font-size:12px;color:#999;text-align:center">PrinterPartsPoint | Karol Bagh, New Delhi | WhatsApp: +91 9990774445</p>
+      </div>
+    </div>`;
+    await sendEmail(user.email, 'Your OTP for Password Reset — PrinterPartsPoint', emailHtml);
+    console.log('OTP for', user.email, ':', otp); // show in Render logs for debugging
+    res.json({
+      message: 'OTP sent to ' + user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3'),
+      email_masked: user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3'),
+    });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Server error. Please try again.' }); }
+});
+
+// STEP 2: Verify OTP
+app.post('/api/auth/verify-otp', (req, res) => {
+  try {
+    const input = sanitize(req.body.email_or_phone || '').toLowerCase().trim();
+    const otp   = sanitize(req.body.otp || '').trim();
+    if (!input || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+    const db   = readDB();
+    const user = db.users.find(u =>
+      u.email === input ||
+      (u.phone && u.phone === input.replace(/\D/g,'').slice(-10))
+    );
+    if (!user) return res.status(400).json({ error: 'Account not found' });
+    const record = otpStore.get(user.email);
+    if (!record)              return res.status(400).json({ error: 'OTP not found. Please request a new OTP.' });
+    if (Date.now() > record.expires) {
+      otpStore.delete(user.email);
+      return res.status(400).json({ error: 'OTP has expired. Please request a new OTP.' });
+    }
+    if (record.otp !== otp) return res.status(400).json({ error: 'Incorrect OTP. Please try again.' });
+    // OTP is correct — generate a short-lived reset token
+    const resetToken = jwt.sign({ id:user.id, email:user.email, purpose:'reset' }, JWT_SECRET, { expiresIn:'15m' });
+    otpStore.delete(user.email); // OTP used — delete it
+    res.json({ message: 'OTP verified', reset_token: resetToken });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// STEP 3: Set new password using reset token
+app.post('/api/auth/reset-password', (req, res) => {
+  try {
+    const { reset_token, new_password } = req.body;
+    if (!reset_token || !new_password) return res.status(400).json({ error: 'Reset token and new password are required' });
+    if (new_password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    let decoded;
+    try {
+      decoded = jwt.verify(reset_token, JWT_SECRET);
+    } catch(e) {
+      return res.status(400).json({ error: 'Reset link has expired. Please start again.' });
+    }
+    if (decoded.purpose !== 'reset') return res.status(400).json({ error: 'Invalid reset token' });
+    const db  = readDB();
+    const idx = db.users.findIndex(u => u.id === decoded.id);
+    if (idx === -1) return res.status(404).json({ error: 'Account not found' });
+    db.users[idx].password   = bcrypt.hashSync(new_password, 12);
+    db.users[idx].updated_at = new Date().toISOString();
+    writeDB(db);
+    // Send confirmation email
+    sendEmail(db.users[idx].email, 'Password Changed — PrinterPartsPoint',
+      `<div style="font-family:Arial;padding:24px;max-width:500px;margin:auto">
+        <h2 style="color:#1a4298">Password Changed Successfully</h2>
+        <p>Hello ${db.users[idx].name},</p>
+        <p>Your password has been changed successfully.</p>
+        <p style="color:#e53e3e">If you did not make this change, contact us immediately on WhatsApp: +91 9990774445</p>
+      </div>`
+    );
+    res.json({ message: 'Password changed successfully! You can now login with your new password.' });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
 
 // ════════════════════════════════════════════════════════════════
 //   PRODUCTS
