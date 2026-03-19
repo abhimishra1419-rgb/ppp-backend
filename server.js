@@ -110,7 +110,7 @@ function setupDatabase() {
   const adminHash = bcrypt.hashSync('Admin@1234', 12);
   const db = {
     settings: {
-      site_name:'PrinterPartsPoint', tagline:"India's #1 Printer Spare Parts Store",
+      logo_url:null, site_name:'PrinterPartsPoint', tagline:"India's #1 Printer Spare Parts Store",
       hero_title:"India's #1 Source for Printer Spare Parts",
       hero_subtitle:'Genuine & compatible parts for HP, Canon, Epson, Ricoh, Brother printers.',
       hero_btn_primary:'Shop Now', hero_btn_secondary:'New Arrivals',
@@ -125,6 +125,29 @@ function setupDatabase() {
       return_window_days:  7,  // customers can request return within 7 days
       meta_title:'PrinterPartsPoint - Printer Spare Parts India',
       meta_description:'Buy genuine printer spare parts online in India.',
+      // Nav links — admin can edit these
+      nav_links: JSON.stringify([
+        { label:'Home',        url:'index.html',              icon:'🏠' },
+        { label:'All Products',url:'products.html',           icon:'📦' },
+        { label:'Laser Parts', url:'products.html?cat=laser', icon:'🖨️' },
+        { label:'Inkjet Parts',url:'products.html?cat=inkjet',icon:'💧' },
+        { label:'Toner Parts', url:'products.html?cat=toner', icon:'🖤' },
+        { label:'Thermal/POS', url:'products.html?cat=thermal',icon:'🧾' },
+        { label:'Track Order', url:'track.html',              icon:'📦' },
+        { label:'Contact',     url:'contact.html',            icon:'📞' },
+      ]),
+      // Social media links
+      social_whatsapp: 'https://wa.me/919990774445',
+      social_facebook:  '',
+      social_instagram: '',
+      social_youtube:   '',
+      // Footer text
+      footer_tagline: 'Your trusted source for genuine printer spare parts across India.',
+      footer_copyright: '2025 PrinterPartsPoint. All rights reserved.',
+      // Theme colors
+      color_primary: '#0d2c6b',
+      color_secondary: '#1a4298',
+      color_accent: '#00b5d8',
     },
     users:        [{ id:1, name:'Admin', email:'admin@printerpartspoint.in', phone:'9990774445', password:adminHash, role:'admin', addresses:[], created_at:new Date().toISOString() }],
     categories:   [
@@ -276,6 +299,59 @@ app.put('/api/settings', adminMiddleware, (req, res) => {
   writeDB(db);
   res.json({ message:'Settings saved', settings:db.settings });
 });
+// Logo upload — stores file in uploads/logo/ folder
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'uploads', 'logo');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, 'logo' + ext); // always overwrite with same name
+  },
+});
+const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max for logo
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg','.jpeg','.png','.webp','.svg','.gif'];
+    allowed.includes(path.extname(file.originalname).toLowerCase()) ? cb(null,true) : cb(new Error('Image files only'));
+  },
+});
+
+// Upload logo image
+app.post('/api/settings/logo', adminMiddleware, uploadLogo.single('logo'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No logo file uploaded' });
+    const db = readDB();
+    // Remove old logo file if different extension
+    const logoDir = path.join(__dirname, 'uploads', 'logo');
+    const ext     = path.extname(req.file.filename).toLowerCase();
+    const exts    = ['.jpg','.jpeg','.png','.webp','.svg','.gif'];
+    exts.filter(e => e !== ext).forEach(e => {
+      const old = path.join(logoDir, 'logo'+e);
+      if (fs.existsSync(old)) fs.unlinkSync(old);
+    });
+    db.settings.logo_url = '/uploads/logo/' + req.file.filename;
+    writeDB(db);
+    res.json({ message: 'Logo uploaded', logo_url: BASE_URL + db.settings.logo_url });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Upload failed' }); }
+});
+
+// Delete logo — revert to text logo
+app.delete('/api/settings/logo', adminMiddleware, (req, res) => {
+  const db = readDB();
+  if (db.settings.logo_url) {
+    const p = path.join(__dirname, db.settings.logo_url);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+    db.settings.logo_url = null;
+    writeDB(db);
+  }
+  res.json({ message: 'Logo removed' });
+});
+
+
 
 // ════════════════════════════════════════════════════════════════
 //   AUTH
@@ -893,6 +969,123 @@ app.get('/api/admin/stats', adminMiddleware, (req, res) => {
 // ════════════════════════════════════════════════════════════════
 //   CONTACT
 // ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+//   SMART SEARCH — Live suggestions + trending + search history
+// ════════════════════════════════════════════════════════════════
+
+// Track search queries — used for trending/popular searches
+function trackSearch(query) {
+  try {
+    const db = readDB();
+    db.search_logs = db.search_logs || [];
+    // Only log non-empty searches longer than 2 chars
+    if (!query || query.length < 2) return;
+    const q = query.toLowerCase().trim();
+    const existing = db.search_logs.find(s => s.query === q);
+    if (existing) {
+      existing.count++;
+      existing.last_searched = new Date().toISOString();
+    } else {
+      db.search_logs.push({ query: q, count: 1, last_searched: new Date().toISOString() });
+    }
+    // Keep only top 500 search logs
+    if (db.search_logs.length > 500) {
+      db.search_logs.sort((a,b) => b.count - a.count);
+      db.search_logs = db.search_logs.slice(0, 500);
+    }
+    writeDB(db);
+  } catch(e) {}
+}
+
+// GET /api/search/suggestions?q=drum
+// Returns: matching products + categories + trending searches
+app.get('/api/search/suggestions', (req, res) => {
+  try {
+    const q  = sanitize(req.query.q || '').toLowerCase().trim();
+    const db = readDB();
+
+    if (q.length < 1) {
+      // No query — return trending searches and popular products
+      const trending = (db.search_logs || [])
+        .sort((a,b) => b.count - a.count)
+        .slice(0, 8)
+        .map(s => s.query);
+
+      const popular = db.products
+        .filter(p => p.is_active && p.is_bestseller)
+        .slice(0, 4)
+        .map(p => ({ id:p.id, name:p.name, price:p.price, image_url:p.image?BASE_URL+p.image:null, category:db.categories.find(c=>c.id===p.category_id)?.name||'' }));
+
+      const recent = db.products
+        .filter(p => p.is_active)
+        .sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 4)
+        .map(p => ({ id:p.id, name:p.name, price:p.price, image_url:p.image?BASE_URL+p.image:null, category:db.categories.find(c=>c.id===p.category_id)?.name||'' }));
+
+      return res.json({ trending, popular, recent, products:[], categories:[] });
+    }
+
+    // Track this search
+    trackSearch(q);
+
+    // Match products by name, SKU, description
+    const products = db.products
+      .filter(p => {
+        if (!p.is_active) return false;
+        const name = (p.name||'').toLowerCase();
+        const sku  = (p.sku||'').toLowerCase();
+        const desc = (p.description||'').toLowerCase();
+        return name.includes(q) || sku.includes(q) || desc.includes(q) ||
+               q.split(' ').every(word => name.includes(word)); // multi-word search
+      })
+      .slice(0, 6)
+      .map(p => ({
+        id:       p.id,
+        name:     p.name,
+        price:    p.price,
+        old_price:p.old_price,
+        sku:      p.sku,
+        image_url:p.image ? BASE_URL+p.image : null,
+        category: db.categories.find(c=>c.id===p.category_id)?.name || '',
+        stock:    p.stock,
+      }));
+
+    // Match categories
+    const categories = db.categories
+      .filter(c => c.name.toLowerCase().includes(q))
+      .slice(0, 3)
+      .map(c => ({ id:c.id, name:c.name, slug:c.slug }));
+
+    // Related search suggestions (other searches containing this query)
+    const related = (db.search_logs || [])
+      .filter(s => s.query.includes(q) && s.query !== q)
+      .sort((a,b) => b.count - a.count)
+      .slice(0, 5)
+      .map(s => s.query);
+
+    res.json({ products, categories, related, trending:[], popular:[], recent:[] });
+  } catch(e) { console.error(e); res.status(500).json({ products:[], categories:[], related:[], trending:[] }); }
+});
+
+// GET /api/search/trending — top searched terms
+app.get('/api/search/trending', (req, res) => {
+  try {
+    const db = readDB();
+    const trending = (db.search_logs || [])
+      .sort((a,b) => b.count - a.count)
+      .slice(0, 10)
+      .map(s => ({ query: s.query, count: s.count }));
+    res.json(trending);
+  } catch(e) { res.json([]); }
+});
+
+// POST /api/search/track — manually track a search (when customer hits enter)
+app.post('/api/search/track', (req, res) => {
+  trackSearch(sanitize(req.body.query || ''));
+  res.json({ ok: true });
+});
+
 app.post('/api/contact', (req, res) => {
   const db=readDB();
   const { name, email, phone, message } = req.body;
