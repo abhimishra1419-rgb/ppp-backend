@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════
-//   PrinterPartsPoint – Production Backend
+//   PrintersReports – Production Backend
 //   Security: Helmet, Rate Limiting, Input Validation
 //   Payments: Razorpay (UPI/Card/NetBanking/Wallets)
 //   Emails:   Nodemailer (Order confirmation, status updates)
@@ -21,7 +21,7 @@ const Razorpay    = require('razorpay');
 
 const app     = express();
 const PORT    = process.env.PORT    || 5000;
-const JWT_SECRET   = process.env.JWT_SECRET    || 'printerpartspoint_secret_change_in_production';
+const JWT_SECRET   = process.env.JWT_SECRET    || 'printersreports_secret_change_in_production';
 const BASE_URL     = process.env.BASE_URL      || ('http://localhost:' + PORT);
 const DB_FILE      = path.join(__dirname, 'database.json');
 
@@ -39,7 +39,7 @@ try {
 // Email (Nodemailer)
 const EMAIL_USER = process.env.EMAIL_USER || '';
 const EMAIL_PASS = process.env.EMAIL_PASS || '';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'PrinterPartsPoint <noreply@printerpartspoint.in>';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'PrintersReports <noreply@printersreports.in>';
 let transporter = null;
 try {
   if (EMAIL_USER && EMAIL_PASS) {
@@ -110,21 +110,21 @@ function setupDatabase() {
   const adminHash = bcrypt.hashSync('Admin@1234', 12);
   const db = {
     settings: {
-      logo_url:null, site_name:'PrinterPartsPoint', tagline:"India's #1 Printer Spare Parts Store",
-      hero_title:"India's #1 Source for Printer Spare Parts",
+      logo_url:null, site_name:'PrintersReports', tagline:"India's #1 Printer Reports Store",
+      hero_title:"India's #1 Source for Printer Reports",
       hero_subtitle:'Genuine & compatible parts for HP, Canon, Epson, Ricoh, Brother printers.',
       hero_btn_primary:'Shop Now', hero_btn_secondary:'New Arrivals',
       announcement_bar:'Free Shipping on orders above Rs.999 | All Prices Exclusive of 18% GST',
-      whatsapp_number:'9990774445', whatsapp_banner_text:'For any queries contact us on WhatsApp',
+      whatsapp_number:'', whatsapp_banner_text:'For any queries contact us on WhatsApp',
       gst_rate:18, free_shipping_min:999,
       show_new_arrivals:true, show_best_sellers:true, show_categories:true,
-      footer_address:'Karol Bagh, New Delhi - 110005',
-      footer_email:'support@printerpartspoint.in',
+      footer_address:'',
+      footer_email:'support@printersreports.in',
       working_hours:'Mon-Sat: 10:00 AM - 7:00 PM',
       cancel_window_hours: 24, // customers can cancel within 24 hours
       return_window_days:  7,  // customers can request return within 7 days
-      meta_title:'PrinterPartsPoint - Printer Spare Parts India',
-      meta_description:'Buy genuine printer spare parts online in India.',
+      meta_title:'PrintersReports - Printer Reports India',
+      meta_description:'Buy genuine printer reports online in India.',
       // Nav links — admin can edit these
       nav_links: JSON.stringify([
         { label:'Home',        url:'index.html',              icon:'🏠' },
@@ -137,19 +137,19 @@ function setupDatabase() {
         { label:'Contact',     url:'contact.html',            icon:'📞' },
       ]),
       // Social media links
-      social_whatsapp: 'https://wa.me/919990774445',
+      social_whatsapp: '',
       social_facebook:  '',
       social_instagram: '',
       social_youtube:   '',
       // Footer text
-      footer_tagline: 'Your trusted source for genuine printer spare parts across India.',
-      footer_copyright: '2025 PrinterPartsPoint. All rights reserved.',
+      footer_tagline: 'Your trusted source for genuine printer reports across India.',
+      footer_copyright: '2025 PrintersReports. All rights reserved.',
       // Theme colors
       color_primary: '#0d2c6b',
       color_secondary: '#1a4298',
       color_accent: '#00b5d8',
     },
-    users:        [{ id:1, name:'Admin', email:'admin@printerpartspoint.in', phone:'9990774445', password:adminHash, role:'admin', addresses:[], created_at:new Date().toISOString() }],
+    users:        [{ id:1, name:'Admin', email:'admin@printersreports.in', phone:'', password:adminHash, role:'admin', addresses:[], created_at:new Date().toISOString() }],
     categories:   [
       { id:1, name:'Laser Printer Parts',      slug:'laser',    sort_order:1 },
       { id:2, name:'DMP Printer Parts',         slug:'dmp',      sort_order:2 },
@@ -171,7 +171,7 @@ function setupDatabase() {
   };
   writeDB(db);
   console.log('✅ database.json created');
-  console.log('🔑 Admin: admin@printerpartspoint.in / Admin@1234');
+  console.log('🔑 Admin: admin@printersreports.in / Admin@1234');
 }
 setupDatabase();
 
@@ -209,7 +209,7 @@ function orderConfirmationEmail(order, user, items) {
   return `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
     <div style="background:#1a4298;color:#fff;padding:24px;text-align:center">
-      <h1 style="margin:0;font-size:24px">PrinterPartsPoint</h1>
+      <h1 style="margin:0;font-size:24px">PrintersReports</h1>
       <p style="margin:8px 0 0;opacity:.8">Order Confirmation</p>
     </div>
     <div style="padding:24px;background:#f5f8ff">
@@ -242,7 +242,7 @@ function orderConfirmationEmail(order, user, items) {
         <h3 style="margin:0 0 8px;color:#0d2c6b">Payment</h3>
         <p style="margin:0;color:#555">${order.payment_method==='cod'?'Cash on Delivery — pay when your order arrives':'Online Payment — Rs.'+order.total.toLocaleString('en-IN')+' received'}</p>
       </div>
-      <p style="text-align:center;color:#777;font-size:13px">For queries: WhatsApp us at +91 9990774445<br/>or email support@printerpartspoint.in</p>
+      <p style="text-align:center;color:#777;font-size:13px">For queries: WhatsApp us at your support number<br/>or email support@printersreports.in</p>
     </div>
   </div>`;
 }
@@ -259,7 +259,7 @@ function orderStatusEmail(order, user, newStatus, trackingNumber) {
   return `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
     <div style="background:#1a4298;color:#fff;padding:24px;text-align:center">
-      <h1 style="margin:0;font-size:24px">PrinterPartsPoint</h1>
+      <h1 style="margin:0;font-size:24px">PrintersReports</h1>
     </div>
     <div style="padding:24px;background:#f5f8ff">
       <div style="background:#fff;border-radius:12px;padding:24px">
@@ -372,12 +372,12 @@ app.post('/api/auth/register', async (req, res) => {
     db.users.push(user); writeDB(db);
     const token = jwt.sign({ id:user.id, email, role:'customer' }, JWT_SECRET, { expiresIn:'30d' });
     // Send welcome email
-    sendEmail(email, 'Welcome to PrinterPartsPoint!',
+    sendEmail(email, 'Welcome to PrintersReports!',
       `<div style="font-family:Arial,sans-serif;padding:24px;max-width:500px;margin:auto">
         <h2 style="color:#1a4298">Welcome, ${name}! 🎉</h2>
-        <p>Your account has been created successfully on PrinterPartsPoint.</p>
-        <p>You can now shop for genuine printer spare parts delivered across India.</p>
-        <p style="color:#777;font-size:13px">For queries: WhatsApp +91 9990774445</p>
+        <p>Your account has been created successfully on PrintersReports.</p>
+        <p>You can now shop for genuine printer reports delivered across India.</p>
+        <p style="color:#777;font-size:13px">For queries: WhatsApp ${process.env.WHATSAPP_NUMBER || "your WhatsApp number"}</p>
       </div>`
     );
     res.json({ message:'Account created successfully', token, user:{ id:user.id, name, email, role:'customer' } });
@@ -582,7 +582,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const emailHtml = `
     <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto">
       <div style="background:#1a4298;color:#fff;padding:24px;text-align:center;border-radius:12px 12px 0 0">
-        <h2 style="margin:0;font-size:22px">PrinterPartsPoint</h2>
+        <h2 style="margin:0;font-size:22px">PrintersReports</h2>
         <p style="margin:6px 0 0;opacity:.8">Password Reset OTP</p>
       </div>
       <div style="background:#f5f8ff;padding:28px;border-radius:0 0 12px 12px">
@@ -592,13 +592,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           <div style="font-size:40px;font-weight:800;letter-spacing:12px;color:#0d2c6b;font-family:monospace">${otp}</div>
           <div style="font-size:13px;color:#888;margin-top:8px">Valid for 10 minutes only</div>
         </div>
-        <p style="color:#e53e3e;font-size:13px;margin:0 0 16px">⚠️ Never share this OTP with anyone. PrinterPartsPoint will never ask for your OTP.</p>
+        <p style="color:#e53e3e;font-size:13px;margin:0 0 16px">⚠️ Never share this OTP with anyone. PrintersReports will never ask for your OTP.</p>
         <p style="color:#888;font-size:12px">If you did not request this, ignore this email. Your account is safe.</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0"/>
-        <p style="font-size:12px;color:#999;text-align:center">PrinterPartsPoint | Karol Bagh, New Delhi | WhatsApp: +91 9990774445</p>
+        <p style="font-size:12px;color:#999;text-align:center">PrintersReports | ${process.env.BUSINESS_ADDRESS || ""} | WhatsApp: ${process.env.WHATSAPP_NUMBER || ""}</p>
       </div>
     </div>`;
-    await sendEmail(user.email, 'Your OTP for Password Reset — PrinterPartsPoint', emailHtml);
+    await sendEmail(user.email, 'Your OTP for Password Reset — PrintersReports', emailHtml);
     console.log('OTP for', user.email, ':', otp); // show in Render logs for debugging
     res.json({
       message: 'OTP sent to ' + user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3'),
@@ -653,12 +653,12 @@ app.post('/api/auth/reset-password', (req, res) => {
     db.users[idx].updated_at = new Date().toISOString();
     writeDB(db);
     // Send confirmation email
-    sendEmail(db.users[idx].email, 'Password Changed — PrinterPartsPoint',
+    sendEmail(db.users[idx].email, 'Password Changed — PrintersReports',
       `<div style="font-family:Arial;padding:24px;max-width:500px;margin:auto">
         <h2 style="color:#1a4298">Password Changed Successfully</h2>
         <p>Hello ${db.users[idx].name},</p>
         <p>Your password has been changed successfully.</p>
-        <p style="color:#e53e3e">If you did not make this change, contact us immediately on WhatsApp: +91 9990774445</p>
+        <p style="color:#e53e3e">If you did not make this change, contact us immediately on WhatsApp: ${process.env.WHATSAPP_NUMBER || "your WhatsApp number"}</p>
       </div>`
     );
     res.json({ message: 'Password changed successfully! You can now login with your new password.' });
@@ -845,7 +845,7 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
     writeDB(db);
     // Send confirmation email
     const user = db.users.find(u=>u.id===req.user.id);
-    if (user?.email) sendEmail(user.email, `Order Confirmed — ${order_number} | PrinterPartsPoint`, orderConfirmationEmail(order, user, resolvedItems));
+    if (user?.email) sendEmail(user.email, `Order Confirmed — ${order_number} | PrintersReports`, orderConfirmationEmail(order, user, resolvedItems));
     res.json({ success:true, message:'Payment verified. Order confirmed!', order_id:orderId, order_number, total });
   } catch(e) { console.error(e); res.status(500).json({ error:'Order creation failed: '+e.message }); }
 });
@@ -879,7 +879,7 @@ app.post('/api/orders/cod', authMiddleware, async (req, res) => {
     logOrderEvent(db, orderId, 'pending', 'COD order placed — awaiting confirmation', 'system');
     writeDB(db);
     const user = db.users.find(u=>u.id===req.user.id);
-    if (user?.email) sendEmail(user.email, `Order Placed — ${order_number} | PrinterPartsPoint`, orderConfirmationEmail(order, user, resolvedItems));
+    if (user?.email) sendEmail(user.email, `Order Placed — ${order_number} | PrintersReports`, orderConfirmationEmail(order, user, resolvedItems));
     res.json({ success:true, message:'COD order placed', order_id:orderId, order_number, total });
   } catch(e) { console.error(e); res.status(500).json({ error:'Order failed: '+e.message }); }
 });
@@ -945,7 +945,7 @@ app.post('/api/orders/:id/cancel', authMiddleware, (req, res) => {
     writeDB(db);
     // Send cancellation email
     const user = db.users.find(u=>u.id===req.user.id);
-    if (user?.email) sendEmail(user.email, `Order Cancelled — ${order.order_number} | PrinterPartsPoint`, orderStatusEmail(order, user, 'cancelled', null));
+    if (user?.email) sendEmail(user.email, `Order Cancelled — ${order.order_number} | PrintersReports`, orderStatusEmail(order, user, 'cancelled', null));
     res.json({ success:true, message:'Order cancelled successfully. Refund (if applicable) will be processed in 5–7 business days.' });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
 });
@@ -971,14 +971,14 @@ app.post('/api/orders/:id/return', authMiddleware, (req, res) => {
     logOrderEvent(db, order.id, 'return_requested', 'Return requested: '+reason, 'customer');
     writeDB(db);
     const user = db.users.find(u=>u.id===req.user.id);
-    if (user?.email) sendEmail(user.email, `Return Request — ${order.order_number} | PrinterPartsPoint`,
+    if (user?.email) sendEmail(user.email, `Return Request — ${order.order_number} | PrintersReports`,
       `<div style="font-family:Arial;padding:24px;max-width:500px;margin:auto">
         <h2 style="color:#1a4298">Return Request Received</h2>
         <p>Hello ${user.name},</p>
         <p>Your return request for order <strong>${order.order_number}</strong> has been received.</p>
         <p>Reason: ${reason}</p>
         <p>Our team will contact you within 24–48 hours to arrange pickup.</p>
-        <p style="color:#777">WhatsApp: +91 9990774445</p>
+        <p style="color:#777">WhatsApp: ${process.env.WHATSAPP_NUMBER || "your WhatsApp number"}</p>
       </div>`
     );
     res.json({ success:true, message:'Return request submitted. Our team will contact you within 24-48 hours.' });
@@ -1003,7 +1003,7 @@ app.put('/api/orders/:id/status', adminMiddleware, async (req, res) => {
     writeDB(db);
     // Send status update email to customer
     const user = db.users.find(u=>u.id===db.orders[idx].user_id);
-    if (user?.email) sendEmail(user.email, `Order ${status.charAt(0).toUpperCase()+status.slice(1)} — ${db.orders[idx].order_number} | PrinterPartsPoint`, orderStatusEmail(db.orders[idx], user, status, tracking_number));
+    if (user?.email) sendEmail(user.email, `Order ${status.charAt(0).toUpperCase()+status.slice(1)} — ${db.orders[idx].order_number} | PrintersReports`, orderStatusEmail(db.orders[idx], user, status, tracking_number));
     res.json({ message:'Order updated and customer notified' });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
 });
@@ -1421,7 +1421,7 @@ app.post('/api/contact', (req, res) => {
   db.enquiries.push({ id:nextId(db.enquiries), name:sanitize(name), email:sanitize(email)||null, phone:sanitize(phone)||null, message:sanitize(message), is_read:false, created_at:new Date().toISOString() });
   writeDB(db);
   // Notify admin
-  if (transporter) sendEmail(EMAIL_USER, 'New Contact Enquiry — PrinterPartsPoint', `<p>From: ${name} (${email||'no email'}) — ${phone||'no phone'}</p><p>${message}</p>`);
+  if (transporter) sendEmail(EMAIL_USER, 'New Contact Enquiry — PrintersReports', `<p>From: ${name} (${email||'no email'}) — ${phone||'no phone'}</p><p>${message}</p>`);
   res.json({ message:'Enquiry submitted. We will contact you within 24 hours.' });
 });
 
@@ -1431,7 +1431,7 @@ app.post('/api/contact', (req, res) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║   PrinterPartsPoint Production Backend           ║');
+  console.log('║   PrintersReports Production Backend           ║');
   console.log(`║   Running at: http://localhost:${PORT}               ║`);
   console.log('║   Security:   Helmet + Rate Limiting             ║');
   console.log(`║   Razorpay:   ${razorpay ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
