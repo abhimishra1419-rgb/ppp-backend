@@ -1450,6 +1450,86 @@ app.get('/api/admin/export', adminMiddleware, (req, res) => {
   res.json(exportData);
 });
 
+
+// ════════════════════════════════════════════════════════════════
+//   ADMIN PROFILE — Change own name, email, password, phone
+// ════════════════════════════════════════════════════════════════
+
+// GET admin's own profile
+app.get('/api/admin/profile', adminMiddleware, (req, res) => {
+  const db   = readDB();
+  const user = db.users.find(u => u.id === req.user.id && u.role === 'admin');
+  if (!user) return res.status(404).json({ error: 'Admin not found' });
+  const { password, ...safe } = user;
+  res.json(safe);
+});
+
+// UPDATE admin name, email, phone
+app.put('/api/admin/profile', adminMiddleware, (req, res) => {
+  try {
+    const db  = readDB();
+    const idx = db.users.findIndex(u => u.id === req.user.id && u.role === 'admin');
+    if (idx === -1) return res.status(404).json({ error: 'Admin not found' });
+
+    const { name, email, phone } = req.body;
+
+    if (name  && name.trim())  db.users[idx].name  = sanitize(name.trim());
+    if (phone && phone.trim()) db.users[idx].phone = sanitize(phone.trim());
+
+    if (email && email.trim()) {
+      const newEmail = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+        return res.status(400).json({ error: 'Invalid email address' });
+      }
+      // Check not taken by another user
+      const taken = db.users.find(u => u.email === newEmail && u.id !== req.user.id);
+      if (taken) return res.status(409).json({ error: 'This email is already used by another account' });
+      db.users[idx].email = newEmail;
+    }
+
+    db.users[idx].updated_at = new Date().toISOString();
+    writeDB(db);
+
+    const { password, ...safe } = db.users[idx];
+    // Return new token so session updates with new email
+    const token = require('jsonwebtoken').sign(
+      { id: db.users[idx].id, email: db.users[idx].email, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    res.json({ message: 'Profile updated successfully', user: safe, token });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// CHANGE admin password — requires current password verification
+app.put('/api/admin/password', adminMiddleware, (req, res) => {
+  try {
+    const { current_password, new_password, confirm_password } = req.body;
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+    if (new_password.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    }
+    if (confirm_password && new_password !== confirm_password) {
+      return res.status(400).json({ error: 'New passwords do not match' });
+    }
+    const db  = readDB();
+    const idx = db.users.findIndex(u => u.id === req.user.id && u.role === 'admin');
+    if (idx === -1) return res.status(404).json({ error: 'Admin not found' });
+
+    // Verify current password
+    if (!require('bcryptjs').compareSync(current_password, db.users[idx].password)) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    // Set new password
+    db.users[idx].password    = require('bcryptjs').hashSync(new_password, 12);
+    db.users[idx].updated_at  = new Date().toISOString();
+    writeDB(db);
+    res.json({ message: 'Password changed successfully. Please login again with your new password.' });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
 app.post('/api/contact', (req, res) => {
   const db=readDB();
   const { name, email, phone, message } = req.body;
