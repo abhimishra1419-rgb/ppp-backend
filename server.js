@@ -191,11 +191,18 @@ function adminMiddleware(req, res, next) {
 
 // ── EMAIL HELPER ─────────────────────────────────────────────
 async function sendEmail(to, subject, html) {
-  if (!transporter) return; // silently skip if email not configured
+  if (!transporter) {
+    console.log('📧 Email not configured — EMAIL_USER / EMAIL_PASS not set in Render environment');
+    return { sent: false, reason: 'not_configured' };
+  }
   try {
     await transporter.sendMail({ from: EMAIL_FROM, to, subject, html });
     console.log('📧 Email sent to:', to);
-  } catch(e) { console.log('📧 Email failed:', e.message); }
+    return { sent: true };
+  } catch(e) {
+    console.log('📧 Email FAILED to:', to, '|', e.message);
+    return { sent: false, reason: e.message };
+  }
 }
 
 function orderConfirmationEmail(order, user, items) {
@@ -598,11 +605,40 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         <p style="font-size:12px;color:#999;text-align:center">PrintersReports | ${process.env.BUSINESS_ADDRESS || ""} | WhatsApp: ${process.env.WHATSAPP_NUMBER || ""}</p>
       </div>
     </div>`;
-    await sendEmail(user.email, 'Your OTP for Password Reset — PrintersReports', emailHtml);
-    console.log('OTP for', user.email, ':', otp); // show in Render logs for debugging
+    const emailResult = await sendEmail(user.email, 'Your OTP for Password Reset — PrintersReports', emailHtml);
+    
+    // ALWAYS log OTP to Render console so admin can find it
+    console.log('');
+    console.log('╔══════════════════════════════════════════╗');
+    console.log('║  🔑 PASSWORD RESET OTP                   ║');
+    console.log('║  Email  :', user.email);
+    console.log('║  OTP    :', otp);
+    console.log('║  Expires: 10 minutes from now            ║');
+    console.log('╚══════════════════════════════════════════╝');
+    console.log('');
+
+    const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3');
+
+    if (!emailResult || !emailResult.sent) {
+      // Email not configured or failed — tell user clearly
+      const reason = emailResult?.reason || 'unknown';
+      const isNotConfigured = reason === 'not_configured';
+      return res.json({
+        message: isNotConfigured
+          ? 'OTP generated! Email is not configured yet — please check Render logs for the OTP, or contact admin.'
+          : 'OTP generated but email failed to send. Please contact admin on WhatsApp.',
+        email_masked: maskedEmail,
+        email_sent:   false,
+        // For development/testing — show OTP in response if email not configured
+        // REMOVE THIS LINE in production once email is working:
+        debug_otp: isNotConfigured ? otp : undefined,
+      });
+    }
+
     res.json({
-      message: 'OTP sent to ' + user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3'),
-      email_masked: user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3'),
+      message:      'OTP sent to ' + maskedEmail,
+      email_masked: maskedEmail,
+      email_sent:   true,
     });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error. Please try again.' }); }
 });
