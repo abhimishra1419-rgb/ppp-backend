@@ -104,6 +104,45 @@ const nextId  = arr  => arr.length ? Math.max(...arr.map(r => r.id)) + 1 : 1;
 // Input sanitizer — prevent XSS
 const sanitize = str => typeof str === 'string' ? str.replace(/[<>]/g, '').trim() : str;
 
+// ── Shipping calculator ──────────────────────────────────────
+// Returns shipping charge for a cart of items
+function calculateShipping(items, productsDb, settings) {
+  const subtotal      = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const freeThreshold = settings.free_shipping_min || 999;
+  const defaultCharge = settings.default_shipping_charge !== undefined ? settings.default_shipping_charge : 80;
+
+  // Free shipping if subtotal meets threshold
+  if (subtotal >= freeThreshold) return 0;
+
+  // Calculate shipping per item
+  let shippingTotal = 0;
+  items.forEach(item => {
+    const product = productsDb.find(p => p.id === item.product_id);
+    if (!product) return;
+    // Use product-specific shipping charge if set, else global default
+    const itemShipping = (product.shipping_charge !== null && product.shipping_charge !== undefined)
+      ? product.shipping_charge
+      : defaultCharge;
+    shippingTotal += itemShipping * item.qty;
+  });
+
+  // Cap at a max (don't charge shipping more than once for single-item orders)
+  // For multi-item: charge per item or a flat cap — use flat cap approach
+  // Take max of individual item charges (not per-qty) for fairness
+  if (items.length > 0) {
+    const itemCharges = items.map(item => {
+      const product = productsDb.find(p => p.id === item.product_id);
+      return (product && product.shipping_charge !== null && product.shipping_charge !== undefined)
+        ? product.shipping_charge
+        : defaultCharge;
+    });
+    // Use the highest individual product shipping charge as the order shipping
+    return Math.max(...itemCharges);
+  }
+  return defaultCharge;
+}
+
+
 // ── DATABASE SETUP ───────────────────────────────────────────
 function setupDatabase() {
   if (fs.existsSync(DB_FILE)) { console.log('✅ database.json loaded'); return; }
@@ -117,6 +156,8 @@ function setupDatabase() {
       announcement_bar:'Free Shipping on orders above Rs.999 | All Prices Exclusive of 18% GST',
       whatsapp_number:'', whatsapp_banner_text:'For any queries contact us on WhatsApp',
       gst_rate:18, free_shipping_min:999,
+      default_shipping_charge: 80,   // Rs.80 default shipping per order
+      shipping_message: 'Free shipping on orders above Rs.999',
       show_new_arrivals:true, show_best_sellers:true, show_categories:true,
       footer_address:'',
       footer_email:'support@printersreports.in',
@@ -725,7 +766,7 @@ app.get('/api/products', (req, res) => {
     list = list.map(p => {
       const revs    = (db.reviews||[]).filter(r => r.product_id === p.id && r.approved);
       const avgRating = revs.length ? (revs.reduce((s,r) => s+r.rating,0)/revs.length).toFixed(1) : null;
-      return { ...p, category_name:db.categories.find(c=>c.id===p.category_id)?.name||'', image_url:p.image?BASE_URL+p.image:null, avg_rating:avgRating, review_count:revs.length };
+      return { ...p, category_name:db.categories.find(c=>c.id===p.category_id)?.name||'', image_url:p.image?BASE_URL+p.image:null, avg_rating:avgRating, review_count:revs.length, shipping_charge:p.shipping_charge };
     });
     const total = list.length, offset = (parseInt(page)-1)*parseInt(limit);
     res.json({ products:list.slice(offset,offset+parseInt(limit)), total, page:parseInt(page), limit:parseInt(limit) });
@@ -746,7 +787,8 @@ app.post('/api/products', adminMiddleware, upload.single('image'), (req, res) =>
     const db = readDB();
     const { name, description, sku, category_id, price, old_price, stock, is_new, is_bestseller } = req.body;
     if (!name || !price) return res.status(400).json({ error:'Name and price are required' });
-    const prod = { id:nextId(db.products), name:sanitize(name), description:sanitize(description)||'', sku:sanitize(sku)||'', category_id:category_id?parseInt(category_id):null, price:parseFloat(price), old_price:old_price?parseFloat(old_price):null, stock:parseInt(stock)||0, image:req.file?'/uploads/products/'+req.file.filename:null, is_new:is_new==='1', is_bestseller:is_bestseller==='1', is_active:true, created_at:new Date().toISOString() };
+    const shippingCharge = req.body.shipping_charge !== undefined && req.body.shipping_charge !== '' ? parseFloat(req.body.shipping_charge) : null;
+    const prod = { id:nextId(db.products), name:sanitize(name), description:sanitize(description)||'', sku:sanitize(sku)||'', category_id:category_id?parseInt(category_id):null, price:parseFloat(price), old_price:old_price?parseFloat(old_price):null, stock:parseInt(stock)||0, shipping_charge:shippingCharge, image:req.file?'/uploads/products/'+req.file.filename:null, is_new:is_new==='1', is_bestseller:is_bestseller==='1', is_active:true, created_at:new Date().toISOString() };
     db.products.push(prod); writeDB(db);
     res.json({ message:'Product added', id:prod.id, product:prod });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
@@ -758,7 +800,8 @@ app.put('/api/products/:id', adminMiddleware, upload.single('image'), (req, res)
     if (idx===-1) return res.status(404).json({ error:'Product not found' });
     if (req.file && db.products[idx].image) { const old=path.join(__dirname,db.products[idx].image); if(fs.existsSync(old)) fs.unlinkSync(old); }
     const { name, description, sku, category_id, price, old_price, stock, is_new, is_bestseller, is_active } = req.body;
-    db.products[idx] = { ...db.products[idx], name:sanitize(name)||db.products[idx].name, description:sanitize(description)??db.products[idx].description, sku:sanitize(sku)??db.products[idx].sku, category_id:category_id?parseInt(category_id):db.products[idx].category_id, price:price?parseFloat(price):db.products[idx].price, old_price:old_price!==undefined?(old_price?parseFloat(old_price):null):db.products[idx].old_price, stock:stock!==undefined?parseInt(stock):db.products[idx].stock, image:req.file?'/uploads/products/'+req.file.filename:db.products[idx].image, is_new:is_new==='1', is_bestseller:is_bestseller==='1', is_active:is_active!=='0'&&is_active!==false, updated_at:new Date().toISOString() };
+    const updatedShipping = req.body.shipping_charge !== undefined ? (req.body.shipping_charge===''||req.body.shipping_charge===null?null:parseFloat(req.body.shipping_charge)) : db.products[idx].shipping_charge;
+    db.products[idx] = { ...db.products[idx], name:sanitize(name)||db.products[idx].name, description:sanitize(description)??db.products[idx].description, sku:sanitize(sku)??db.products[idx].sku, category_id:category_id?parseInt(category_id):db.products[idx].category_id, price:price?parseFloat(price):db.products[idx].price, old_price:old_price!==undefined?(old_price?parseFloat(old_price):null):db.products[idx].old_price, stock:stock!==undefined?parseInt(stock):db.products[idx].stock, shipping_charge:updatedShipping, image:req.file?'/uploads/products/'+req.file.filename:db.products[idx].image, is_new:is_new==='1', is_bestseller:is_bestseller==='1', is_active:is_active!=='0'&&is_active!==false, updated_at:new Date().toISOString() };
     writeDB(db);
     res.json({ message:'Product updated', product:db.products[idx] });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
@@ -831,6 +874,39 @@ app.delete('/api/categories/:id', adminMiddleware, (req,res) => {
 // ════════════════════════════════════════════════════════════════
 //   PAYMENT — RAZORPAY
 // ════════════════════════════════════════════════════════════════
+// ── GET shipping cost for cart ─────────────────────────────────
+app.post('/api/shipping/calculate', (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!items || !items.length) return res.json({ shipping: 0, free: true, message: 'Empty cart' });
+    const db       = readDB();
+    const settings = db.settings;
+    const subtotal = items.reduce((s, i) => {
+      const p = db.products.find(p => p.id === i.product_id);
+      return s + (p ? p.price * i.qty : 0);
+    }, 0);
+    const freeMin  = settings.free_shipping_min || 999;
+    const shipping = calculateShipping(
+      items.map(i => {
+        const p = db.products.find(p => p.id === i.product_id);
+        return { product_id:i.product_id, qty:i.qty, price:p?.price||0 };
+      }),
+      db.products,
+      settings
+    );
+    const amountNeededForFree = Math.max(0, freeMin - subtotal);
+    res.json({
+      shipping,
+      free: shipping === 0,
+      subtotal,
+      free_threshold:     freeMin,
+      amount_for_free:    amountNeededForFree,
+      default_charge:     settings.default_shipping_charge || 80,
+      shipping_message:   settings.shipping_message || ('Free shipping on orders above Rs.' + freeMin),
+    });
+  } catch(e) { console.error(e); res.status(500).json({ shipping: 0, error: 'Could not calculate' }); }
+});
+
 app.post('/api/payment/create-order', authMiddleware, (req, res) => {
   try {
     if (!razorpay) return res.status(503).json({ error:'Payment gateway not configured. Please contact admin or use COD.' });
@@ -845,11 +921,13 @@ app.post('/api/payment/create-order', authMiddleware, (req, res) => {
       subtotal += p.price * item.qty;
       validated.push({ product_id:item.product_id, qty:item.qty, price:p.price, name:p.name });
     }
-    const gst   = Math.round(subtotal*0.18*100)/100;
-    const total = Math.round((subtotal+gst)*100); // paise
+    const settings = db.settings;
+    const shipping = calculateShipping(validated, db.products, settings);
+    const gst      = Math.round(subtotal*0.18*100)/100;
+    const total    = Math.round((subtotal+gst+shipping)*100); // paise
     razorpay.orders.create({ amount:total, currency:'INR', receipt:'PPP_'+Date.now(), notes:{ user_id:req.user.id } }, (err, order) => {
       if (err) { console.error('Razorpay error:', err); return res.status(500).json({ error:'Could not create payment: '+(err.error?.description||err.message) }); }
-      res.json({ razorpay_order_id:order.id, amount:order.amount, currency:order.currency, key_id:RAZORPAY_KEY_ID, subtotal, gst, total:subtotal+gst, validated_items:validated, shipping_address });
+      res.json({ razorpay_order_id:order.id, amount:order.amount, currency:order.currency, key_id:RAZORPAY_KEY_ID, subtotal, gst, shipping, total:subtotal+gst+shipping, validated_items:validated, shipping_address });
     });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
 });
@@ -868,9 +946,11 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
       subtotal += p.price * item.qty;
       resolvedItems.push({ product_id:item.product_id, qty:item.qty, price:p.price, name:p.name, image:p.image?BASE_URL+p.image:null });
     }
-    const gst = Math.round(subtotal*0.18*100)/100, total = subtotal+gst;
+    const settings = db.settings;
+    const shipping  = calculateShipping(resolvedItems, db.products, settings);
+    const gst = Math.round(subtotal*0.18*100)/100, total = subtotal+gst+shipping;
     const order_number = 'PPP'+Date.now(), orderId = nextId(db.orders);
-    const order = { id:orderId, order_number, user_id:req.user.id, subtotal, gst, total, shipping_address:JSON.stringify(shipping_address), payment_method:'online', payment_status:'paid', razorpay_order_id, razorpay_payment_id, status:'confirmed', tracking_number:null, tracking_url:null, notes:sanitize(notes)||null, cancel_reason:null, return_requested:false, created_at:new Date().toISOString(), updated_at:new Date().toISOString() };
+    const order = { id:orderId, order_number, user_id:req.user.id, subtotal, gst, shipping, total, shipping_address:JSON.stringify(shipping_address), payment_method:'online', payment_status:'paid', razorpay_order_id, razorpay_payment_id, status:'confirmed', tracking_number:null, tracking_url:null, notes:sanitize(notes)||null, cancel_reason:null, return_requested:false, created_at:new Date().toISOString(), updated_at:new Date().toISOString() };
     db.orders.push(order);
     resolvedItems.forEach(item => {
       db.order_items.push({ id:nextId(db.order_items), order_id:orderId, product_id:item.product_id, qty:item.qty, price:item.price });
@@ -904,9 +984,11 @@ app.post('/api/orders/cod', authMiddleware, async (req, res) => {
       subtotal += p.price * item.qty;
       resolvedItems.push({ product_id:item.product_id, qty:item.qty, price:p.price, name:p.name });
     }
-    const gst = Math.round(subtotal*0.18*100)/100, total = subtotal+gst;
+    const settings = db.settings;
+    const shipping  = calculateShipping(resolvedItems, db.products, settings);
+    const gst = Math.round(subtotal*0.18*100)/100, total = subtotal+gst+shipping;
     const order_number = 'PPP'+Date.now(), orderId = nextId(db.orders);
-    const order = { id:orderId, order_number, user_id:req.user.id, subtotal, gst, total, shipping_address:JSON.stringify(shipping_address), payment_method:'cod', payment_status:'pending', razorpay_order_id:null, razorpay_payment_id:null, status:'pending', tracking_number:null, tracking_url:null, notes:sanitize(notes)||null, cancel_reason:null, return_requested:false, created_at:new Date().toISOString(), updated_at:new Date().toISOString() };
+    const order = { id:orderId, order_number, user_id:req.user.id, subtotal, gst, shipping, total, shipping_address:JSON.stringify(shipping_address), payment_method:'cod', payment_status:'pending', razorpay_order_id:null, razorpay_payment_id:null, status:'pending', tracking_number:null, tracking_url:null, notes:sanitize(notes)||null, cancel_reason:null, return_requested:false, created_at:new Date().toISOString(), updated_at:new Date().toISOString() };
     db.orders.push(order);
     resolvedItems.forEach(item => {
       db.order_items.push({ id:nextId(db.order_items), order_id:orderId, product_id:item.product_id, qty:item.qty, price:item.price });
