@@ -1237,6 +1237,183 @@ app.post('/api/search/track', (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ════════════════════════════════════════════════════════════════
+//   ADMIN — FULL CONTROL: Delete & Edit Orders, Users, Enquiries
+// ════════════════════════════════════════════════════════════════
+
+// ── DELETE single order (admin) ───────────────────────────────
+app.delete('/api/admin/orders/:id', adminMiddleware, (req, res) => {
+  try {
+    const db  = readDB();
+    const idx = db.orders.findIndex(o => o.id === parseInt(req.params.id));
+    if (idx === -1) return res.status(404).json({ error: 'Order not found' });
+    const order = db.orders[idx];
+    // Also remove order items and events for this order
+    db.order_items  = (db.order_items  || []).filter(i => i.order_id !== order.id);
+    db.order_events = (db.order_events || []).filter(e => e.order_id !== order.id);
+    db.orders.splice(idx, 1);
+    writeDB(db);
+    res.json({ message: 'Order #' + order.order_number + ' deleted successfully' });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// ── DELETE ALL orders (admin — nuclear option) ─────────────────
+app.delete('/api/admin/orders', adminMiddleware, (req, res) => {
+  try {
+    const db = readDB();
+    const count = db.orders.length;
+    db.orders       = [];
+    db.order_items  = [];
+    db.order_events = [];
+    writeDB(db);
+    res.json({ message: count + ' orders deleted successfully' });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ── EDIT order details (admin) — change any field ─────────────
+app.put('/api/admin/orders/:id', adminMiddleware, (req, res) => {
+  try {
+    const db  = readDB();
+    const idx = db.orders.findIndex(o => o.id === parseInt(req.params.id));
+    if (idx === -1) return res.status(404).json({ error: 'Order not found' });
+    const allowed = [
+      'status','payment_status','payment_method','tracking_number','tracking_url',
+      'shipping_address','notes','cancel_reason','total','subtotal','gst',
+    ];
+    allowed.forEach(field => {
+      if (req.body[field] !== undefined) db.orders[idx][field] = req.body[field];
+    });
+    db.orders[idx].updated_at = new Date().toISOString();
+    if (req.body.note) {
+      logOrderEvent(db, db.orders[idx].id, db.orders[idx].status, 'Admin edited: ' + req.body.note, 'admin');
+    }
+    writeDB(db);
+    res.json({ message: 'Order updated', order: db.orders[idx] });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ── GET all customers/users (admin) ───────────────────────────
+app.get('/api/admin/users', adminMiddleware, (req, res) => {
+  try {
+    const { page=1, limit=20, search } = req.query;
+    const db = readDB();
+    let users = db.users.filter(u => u.role !== 'admin');
+    if (search) {
+      const q = search.toLowerCase();
+      users = users.filter(u =>
+        (u.name||'').toLowerCase().includes(q) ||
+        (u.email||'').toLowerCase().includes(q) ||
+        (u.phone||'').includes(q)
+      );
+    }
+    users = users.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    // Add order count per user
+    const result = users.map(u => {
+      const { password, ...safe } = u;
+      const orderCount = db.orders.filter(o => o.user_id === u.id).length;
+      const totalSpent = db.orders.filter(o => o.user_id===u.id && o.payment_status==='paid').reduce((s,o)=>s+o.total,0);
+      return { ...safe, order_count: orderCount, total_spent: totalSpent };
+    });
+    const total = result.length, offset = (parseInt(page)-1)*parseInt(limit);
+    res.json({ users: result.slice(offset, offset+parseInt(limit)), total });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ── EDIT customer details (admin) ─────────────────────────────
+app.put('/api/admin/users/:id', adminMiddleware, (req, res) => {
+  try {
+    const db  = readDB();
+    const idx = db.users.findIndex(u => u.id === parseInt(req.params.id));
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+    if (db.users[idx].role === 'admin') return res.status(403).json({ error: 'Cannot edit admin account from here' });
+    const { name, phone, email } = req.body;
+    if (name)  db.users[idx].name  = sanitize(name);
+    if (phone) db.users[idx].phone = sanitize(phone);
+    if (email) {
+      // Check email not taken by another user
+      const taken = db.users.find(u => u.email === email.toLowerCase() && u.id !== db.users[idx].id);
+      if (taken) return res.status(409).json({ error: 'This email is already used by another account' });
+      db.users[idx].email = email.toLowerCase();
+    }
+    // Admin can also reset password
+    if (req.body.new_password) {
+      if (req.body.new_password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+      db.users[idx].password = require('bcryptjs').hashSync(req.body.new_password, 12);
+    }
+    db.users[idx].updated_at = new Date().toISOString();
+    writeDB(db);
+    const { password, ...safe } = db.users[idx];
+    res.json({ message: 'Customer updated', user: safe });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ── DELETE customer (admin) ────────────────────────────────────
+app.delete('/api/admin/users/:id', adminMiddleware, (req, res) => {
+  try {
+    const db  = readDB();
+    const idx = db.users.findIndex(u => u.id === parseInt(req.params.id));
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+    if (db.users[idx].role === 'admin') return res.status(403).json({ error: 'Cannot delete admin account' });
+    const name = db.users[idx].name;
+    db.users.splice(idx, 1);
+    writeDB(db);
+    res.json({ message: 'Customer "' + name + '" deleted' });
+  } catch(e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ── GET all enquiries (admin) ──────────────────────────────────
+app.get('/api/admin/enquiries', adminMiddleware, (req, res) => {
+  const db = readDB();
+  const list = (db.enquiries||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  res.json(list);
+});
+
+// ── DELETE enquiry (admin) ─────────────────────────────────────
+app.delete('/api/admin/enquiries/:id', adminMiddleware, (req, res) => {
+  const db  = readDB();
+  const idx = (db.enquiries||[]).findIndex(e => e.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Enquiry not found' });
+  db.enquiries.splice(idx, 1);
+  writeDB(db);
+  res.json({ message: 'Enquiry deleted' });
+});
+
+// ── Mark enquiry as read (admin) ──────────────────────────────
+app.put('/api/admin/enquiries/:id/read', adminMiddleware, (req, res) => {
+  const db  = readDB();
+  const idx = (db.enquiries||[]).findIndex(e => e.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  db.enquiries[idx].is_read = true;
+  writeDB(db);
+  res.json({ message: 'Marked as read' });
+});
+
+// ── Admin: reset/clear search logs ────────────────────────────
+app.delete('/api/admin/search-logs', adminMiddleware, (req, res) => {
+  const db = readDB();
+  db.search_logs = [];
+  writeDB(db);
+  res.json({ message: 'Search history cleared' });
+});
+
+// ── Admin: export all data as JSON backup ─────────────────────
+app.get('/api/admin/export', adminMiddleware, (req, res) => {
+  const db = readDB();
+  const exportData = {
+    exported_at: new Date().toISOString(),
+    orders: db.orders,
+    order_items: db.order_items,
+    users: db.users.map(u => { const { password, ...safe } = u; return safe; }),
+    products: db.products,
+    categories: db.categories,
+    enquiries: db.enquiries,
+  };
+  res.setHeader('Content-Disposition', 'attachment; filename="ppp-backup-' + Date.now() + '.json"');
+  res.setHeader('Content-Type', 'application/json');
+  res.json(exportData);
+});
+
 app.post('/api/contact', (req, res) => {
   const db=readDB();
   const { name, email, phone, message } = req.body;
