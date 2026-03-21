@@ -923,11 +923,19 @@ app.post('/api/payment/create-order', authMiddleware, (req, res) => {
     }
     const settings = db.settings;
     const shipping = calculateShipping(validated, db.products, settings);
-    const gst      = Math.round(subtotal*0.18*100)/100;
-    const total    = Math.round((subtotal+gst+shipping)*100); // paise
-    razorpay.orders.create({ amount:total, currency:'INR', receipt:'PPP_'+Date.now(), notes:{ user_id:req.user.id } }, (err, order) => {
-      if (err) { console.error('Razorpay error:', err); return res.status(500).json({ error:'Could not create payment: '+(err.error?.description||err.message) }); }
-      res.json({ razorpay_order_id:order.id, amount:order.amount, currency:order.currency, key_id:RAZORPAY_KEY_ID, subtotal, gst, shipping, total:subtotal+gst+shipping, validated_items:validated, shipping_address });
+    const gstRate  = parseFloat(db.settings.gst_rate) || 18;
+    const gst      = Math.round(subtotal * gstRate / 100 * 100) / 100;
+    const grandTotal = subtotal + gst + shipping;
+    // Amount in paise — must be integer, minimum 100 (Rs.1)
+    const amountPaise = Math.max(100, Math.round(grandTotal * 100));
+    console.log('Creating Razorpay order — subtotal:', subtotal, 'gst:', gst, 'shipping:', shipping, 'total:', grandTotal, 'paise:', amountPaise);
+    razorpay.orders.create({ amount: amountPaise, currency: 'INR', receipt: 'PPP_' + Date.now(), notes: { user_id: req.user.id } }, (err, order) => {
+      if (err) {
+        console.error('Razorpay create-order error:', JSON.stringify(err));
+        return res.status(500).json({ error: 'Could not create payment: ' + (err.error?.description || err.message || JSON.stringify(err)) });
+      }
+      console.log('Razorpay order created:', order.id, '| amount:', order.amount, 'paise =', (order.amount/100).toFixed(2), 'Rs');
+      res.json({ razorpay_order_id: order.id, amount: order.amount, currency: order.currency, key_id: RAZORPAY_KEY_ID, subtotal, gst, shipping, total: grandTotal, validated_items: validated, shipping_address });
     });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
 });
