@@ -973,7 +973,7 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
       if (razorpay) {
         try {
           const payment = await razorpay.payments.fetch(razorpay_payment_id);
-          if (payment && payment.status === 'captured' && payment.order_id === razorpay_order_id) {
+          if (payment && (payment.status === 'captured' || payment.status === 'authorized') && payment.order_id === razorpay_order_id) {
             console.log('Payment verified via Razorpay API fallback — proceeding with order creation');
             // Continue to order creation below — skip signature check
           } else {
