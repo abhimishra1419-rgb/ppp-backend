@@ -935,9 +935,50 @@ app.post('/api/payment/create-order', authMiddleware, (req, res) => {
 app.post('/api/payment/verify', authMiddleware, async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shipping_address, notes } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ error: 'Missing payment details. Please contact support with payment ID: ' + (razorpay_payment_id || 'unknown') });
+    }
+
+    // Check if order already exists for this payment (prevent duplicate orders)
+    const dbCheck = readDB();
+    const existingOrder = dbCheck.orders.find(o => o.razorpay_payment_id === razorpay_payment_id);
+    if (existingOrder) {
+      console.log('Duplicate verify request for payment:', razorpay_payment_id, '— returning existing order');
+      return res.json({ success:true, message:'Order already confirmed!', order_id:existingOrder.id, order_number:existingOrder.order_number, total:existingOrder.total });
+    }
+
     // Verify Razorpay signature
     const expected = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET).update(razorpay_order_id+'|'+razorpay_payment_id).digest('hex');
-    if (expected !== razorpay_signature) return res.status(400).json({ error:'Payment verification failed. Please contact support with payment ID: '+razorpay_payment_id });
+
+    // Log for debugging
+    console.log('Payment verify — ID:', razorpay_payment_id, '| Signature match:', expected === razorpay_signature);
+
+    if (expected !== razorpay_signature) {
+      // Signature mismatch — but payment was captured. Log and try to verify with Razorpay API directly
+      console.error('SIGNATURE MISMATCH — payment_id:', razorpay_payment_id, 'order_id:', razorpay_order_id);
+      console.error('Expected:', expected);
+      console.error('Received:', razorpay_signature);
+      console.error('KEY_SECRET used (last 4):', RAZORPAY_KEY_SECRET.slice(-4));
+
+      // If Razorpay keys are available, verify payment directly via API as fallback
+      if (razorpay) {
+        try {
+          const payment = await razorpay.payments.fetch(razorpay_payment_id);
+          if (payment && payment.status === 'captured' && payment.order_id === razorpay_order_id) {
+            console.log('Payment verified via Razorpay API fallback — proceeding with order creation');
+            // Continue to order creation below — skip signature check
+          } else {
+            return res.status(400).json({ error: 'Payment verification failed. Your payment ID: ' + razorpay_payment_id + '. Please WhatsApp us and we will confirm your order manually.' });
+          }
+        } catch(apiErr) {
+          console.error('Razorpay API verify failed:', apiErr.message);
+          return res.status(400).json({ error: 'Payment captured but verification failed. Payment ID: ' + razorpay_payment_id + '. Please WhatsApp us — we will confirm your order within 30 minutes.' });
+        }
+      } else {
+        return res.status(400).json({ error: 'Payment verification failed. Payment ID: ' + razorpay_payment_id + '. Please WhatsApp us — we will confirm your order manually.' });
+      }
+    }
     const db = readDB();
     let subtotal = 0; const resolvedItems = [];
     for (const item of items) {
@@ -964,6 +1005,82 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
     if (user?.email) sendEmail(user.email, `Order Confirmed — ${order_number} | PrintersReports`, orderConfirmationEmail(order, user, resolvedItems));
     res.json({ success:true, message:'Payment verified. Order confirmed!', order_id:orderId, order_number, total });
   } catch(e) { console.error(e); res.status(500).json({ error:'Order creation failed: '+e.message }); }
+});
+
+
+// ── PAYMENT RECOVERY — Create order from existing payment ID ──
+// Used when payment succeeded but order creation failed
+app.post('/api/payment/recover', authMiddleware, async (req, res) => {
+  try {
+    const { razorpay_payment_id, items, shipping_address } = req.body;
+    if (!razorpay_payment_id) return res.status(400).json({ error: 'Payment ID required' });
+
+    // Check if order already exists
+    const db = readDB();
+    const existing = db.orders.find(o => o.razorpay_payment_id === razorpay_payment_id);
+    if (existing) {
+      return res.json({ success:true, message:'Order already exists!', order_number: existing.order_number, order_id: existing.id });
+    }
+
+    // Verify payment with Razorpay
+    if (!razorpay) return res.status(503).json({ error: 'Payment gateway not configured' });
+
+    const payment = await razorpay.payments.fetch(razorpay_payment_id);
+    if (!payment || payment.status !== 'captured') {
+      return res.status(400).json({ error: 'Payment not found or not captured. ID: ' + razorpay_payment_id });
+    }
+
+    // Payment is real and captured — create the order now
+    let subtotal = 0; const resolvedItems = [];
+    for (const item of (items || [])) {
+      const p = db.products.find(p => p.id === item.product_id && p.is_active);
+      if (!p) continue;
+      subtotal += p.price * item.qty;
+      resolvedItems.push({ product_id:item.product_id, qty:item.qty, price:p.price, name:p.name, image:p.image?BASE_URL+p.image:null });
+    }
+
+    if (!resolvedItems.length) {
+      return res.status(400).json({ error: 'Could not recover items. Please contact admin with payment ID: ' + razorpay_payment_id });
+    }
+
+    const settings  = db.settings;
+    const shipping  = calculateShipping(resolvedItems, db.products, settings);
+    const gst       = Math.round(subtotal * 0.18 * 100) / 100;
+    const total     = subtotal + gst + shipping;
+    const order_number = 'PPP' + Date.now();
+    const orderId      = nextId(db.orders);
+
+    const order = {
+      id: orderId, order_number, user_id: req.user.id,
+      subtotal, gst, shipping, total,
+      shipping_address: JSON.stringify(shipping_address || {}),
+      payment_method: 'online', payment_status: 'paid',
+      razorpay_order_id:   payment.order_id,
+      razorpay_payment_id: razorpay_payment_id,
+      status: 'confirmed', tracking_number: null, tracking_url: null,
+      notes: 'Order recovered after payment verification', cancel_reason: null,
+      return_requested: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    };
+
+    db.orders.push(order);
+    resolvedItems.forEach(item => {
+      db.order_items.push({ id:nextId(db.order_items), order_id:orderId, product_id:item.product_id, qty:item.qty, price:item.price });
+      const pi = db.products.findIndex(p => p.id === item.product_id);
+      if (pi !== -1) db.products[pi].stock -= item.qty;
+    });
+    logOrderEvent(db, orderId, 'confirmed', 'Order recovered — Razorpay payment ' + razorpay_payment_id + ' verified via API', 'system');
+    writeDB(db);
+
+    console.log('✅ Order RECOVERED — payment_id:', razorpay_payment_id, '— order:', order_number);
+
+    const user = db.users.find(u => u.id === req.user.id);
+    if (user?.email) sendEmail(user.email, 'Order Confirmed — ' + order_number + ' | PrintersReports', orderConfirmationEmail(order, user, resolvedItems));
+
+    res.json({ success:true, message:'Order recovered and confirmed!', order_number, order_id: orderId, total });
+  } catch(e) {
+    console.error('Recovery failed:', e);
+    res.status(500).json({ error: 'Recovery failed: ' + e.message });
+  }
 });
 
 // ════════════════════════════════════════════════════════════════
