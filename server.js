@@ -23,7 +23,8 @@ const app     = express();
 const PORT    = process.env.PORT    || 5000;
 const JWT_SECRET   = process.env.JWT_SECRET    || 'printersreports_secret_change_in_production';
 const BASE_URL     = process.env.BASE_URL      || ('http://localhost:' + PORT);
-const DB_FILE      = path.join(__dirname, 'database.json');
+const DB_FILE      = path.join(__dirname, 'database.json'); // fallback only
+const MONGODB_URI  = process.env.MONGODB_URI || '';
 
 // Razorpay
 const RAZORPAY_KEY_ID     = process.env.RAZORPAY_KEY_ID     || '';
@@ -96,10 +97,90 @@ const upload = multer({
   },
 });
 
-// ── DB HELPERS ───────────────────────────────────────────────
-const readDB  = () => JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-const writeDB = data => fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-const nextId  = arr  => arr.length ? Math.max(...arr.map(r => r.id)) + 1 : 1;
+// ── DB HELPERS — MongoDB Atlas + in-memory cache ─────────────
+// All data lives in memory (dbCache). On startup it is loaded from
+// MongoDB. Every writeDB() saves back to MongoDB automatically.
+// This means Render restarts no longer wipe your data.
+
+let dbCache = null;           // in-memory store — single source of truth
+let mongoClient = null;       // MongoDB connection
+let mongoCollection = null;   // the "store" collection
+
+// Connect to MongoDB Atlas
+async function connectMongo() {
+  if (!MONGODB_URI) {
+    console.log('⚠️  MONGODB_URI not set — data will reset on every restart!');
+    console.log('   Add MONGODB_URI to your Render environment variables.');
+    return false;
+  }
+  try {
+    const { MongoClient } = require('mongodb');
+    mongoClient = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
+    await mongoClient.connect();
+    const db = mongoClient.db('printersreports');
+    mongoCollection = db.collection('store');
+    console.log('✅ MongoDB Atlas connected — data is now permanent');
+    return true;
+  } catch(e) {
+    console.error('❌ MongoDB connection failed:', e.message);
+    console.log('   Falling back to local file — data will reset on restart!');
+    mongoClient = null;
+    mongoCollection = null;
+    return false;
+  }
+}
+
+// Load DB from MongoDB into memory
+async function loadFromMongo() {
+  if (!mongoCollection) return null;
+  try {
+    const doc = await mongoCollection.findOne({ _id: 'main' });
+    if (doc) {
+      const { _id, ...data } = doc;
+      return data;
+    }
+    return null;
+  } catch(e) {
+    console.error('MongoDB read error:', e.message);
+    return null;
+  }
+}
+
+// Save in-memory cache to MongoDB (called automatically by writeDB)
+async function saveToMongo(data) {
+  if (!mongoCollection) return;
+  try {
+    await mongoCollection.replaceOne(
+      { _id: 'main' },
+      { _id: 'main', ...data },
+      { upsert: true }
+    );
+  } catch(e) {
+    console.error('MongoDB write error:', e.message);
+    // Also save to local file as backup
+    try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); } catch(fe) {}
+  }
+}
+
+// readDB — returns in-memory cache synchronously (same API as before)
+const readDB = () => {
+  if (!dbCache) {
+    // Should never happen after startup, but fallback to file just in case
+    try { dbCache = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch(e) {}
+  }
+  return dbCache;
+};
+
+// writeDB — updates memory AND persists to MongoDB (same API as before)
+const writeDB = (data) => {
+  dbCache = data;
+  // Persist to MongoDB asynchronously — does not block the response
+  saveToMongo(data).catch(e => console.error('Background save failed:', e.message));
+  // Also keep local file updated as emergency backup
+  try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); } catch(e) {}
+};
+
+const nextId = arr => arr.length ? Math.max(...arr.map(r => r.id)) + 1 : 1;
 
 // Input sanitizer — prevent XSS
 const sanitize = str => typeof str === 'string' ? str.replace(/[<>]/g, '').trim() : str;
@@ -125,10 +206,9 @@ function calculateShipping(items, productsDb, settings) {
 }
 
 // ── DATABASE SETUP ───────────────────────────────────────────
-function setupDatabase() {
-  if (fs.existsSync(DB_FILE)) { console.log('✅ database.json loaded'); return; }
+function getDefaultDb() {
   const adminHash = bcrypt.hashSync('Admin@1234', 12);
-  const db = {
+  return {
     settings: {
       logo_url:null, site_name:'PrintersReports', tagline:"India's #1 Printer Reports Store",
       hero_title:"India's #1 Source for Printer Reports",
@@ -186,12 +266,45 @@ function setupDatabase() {
     enquiries:    [],
     wishlists:    [],
     payment_logs: [],
+    search_logs:  [],
   };
-  writeDB(db);
-  console.log('✅ database.json created');
+}
+
+async function setupDatabase() {
+  // 1. Try to connect to MongoDB
+  await connectMongo();
+
+  // 2. Try to load existing data from MongoDB
+  const mongoData = await loadFromMongo();
+  if (mongoData && mongoData.users) {
+    dbCache = mongoData;
+    console.log('✅ Database loaded from MongoDB Atlas —', mongoData.products?.length || 0, 'products,', mongoData.orders?.length || 0, 'orders');
+    return;
+  }
+
+  // 3. No MongoDB data — try local file (migration: first time setup)
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const fileData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      dbCache = fileData;
+      console.log('✅ Loaded from local database.json — migrating to MongoDB...');
+      // Save local file data into MongoDB so it persists from now on
+      await saveToMongo(fileData);
+      console.log('✅ Migrated local data to MongoDB Atlas');
+      return;
+    } catch(e) {
+      console.log('⚠️  Could not read local database.json:', e.message);
+    }
+  }
+
+  // 4. Fresh install — create default database
+  const defaultDb = getDefaultDb();
+  dbCache = defaultDb;
+  await saveToMongo(defaultDb);
+  try { fs.writeFileSync(DB_FILE, JSON.stringify(defaultDb, null, 2), 'utf8'); } catch(e) {}
+  console.log('✅ Fresh database created and saved to MongoDB Atlas');
   console.log('🔑 Admin: admin@printersreports.in / Admin@1234');
 }
-setupDatabase();
 
 // ── AUTH MIDDLEWARE ──────────────────────────────────────────
 function authMiddleware(req, res, next) {
@@ -1397,16 +1510,22 @@ app.post('/api/contact', (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════
-//   START
+//   START — wait for database before accepting requests
 // ════════════════════════════════════════════════════════════════
-app.listen(PORT, () => {
-  console.log('');
-  console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║   PrintersReports Production Backend           ║');
-  console.log(`║   Running at: http://localhost:${PORT}               ║`);
-  console.log('║   Security:   Helmet + Rate Limiting             ║');
-  console.log(`║   Razorpay:   ${razorpay ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
-  console.log(`║   Email:      ${transporter ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
-  console.log('╚══════════════════════════════════════════════════╝');
-  console.log('');
+setupDatabase().then(() => {
+  app.listen(PORT, () => {
+    console.log('');
+    console.log('╔══════════════════════════════════════════════════╗');
+    console.log('║   PrintersReports Production Backend             ║');
+    console.log(`║   Running at: http://localhost:${PORT}               ║`);
+    console.log('║   Security:   Helmet + Rate Limiting             ║');
+    console.log(`║   Razorpay:   ${razorpay    ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
+    console.log(`║   Email:      ${transporter ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
+    console.log(`║   Database:   ${mongoCollection ? 'MongoDB Atlas ✅' : 'Local file ⚠️  (data resets!)'}     ║`);
+    console.log('╚══════════════════════════════════════════════════╝');
+    console.log('');
+  });
+}).catch(err => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
 });
