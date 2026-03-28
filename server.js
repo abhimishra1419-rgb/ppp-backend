@@ -34,21 +34,21 @@ let razorpay = null;
 try {
   if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
     razorpay = new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET });
-    console.log('✅ Razorpay configured');
-  } else { console.log('⚠️  Razorpay not configured'); }
-} catch(e) { console.log('⚠️  Razorpay init failed:', e.message); }
+    console.log('Razorpay configured');
+  } else { console.log('Razorpay not configured'); }
+} catch(e) { console.log('Razorpay init failed:', e.message); }
 
 // ── Email ─────────────────────────────────────────────────────
 const EMAIL_USER = process.env.EMAIL_USER || '';
 const EMAIL_PASS = process.env.EMAIL_PASS || '';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'PrintersReports <noreply@printersreports.in>';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'PrinterSpareParts <noreply@printersparepts.in>';
 let transporter = null;
 try {
   if (EMAIL_USER && EMAIL_PASS) {
     transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: EMAIL_USER, pass: EMAIL_PASS } });
-    console.log('✅ Email configured');
-  } else { console.log('⚠️  Email not configured — add EMAIL_USER and EMAIL_PASS in Render environment'); }
-} catch(e) { console.log('⚠️  Email init failed:', e.message); }
+    console.log('Email configured');
+  } else { console.log('Email not configured — add EMAIL_USER and EMAIL_PASS in Render environment'); }
+} catch(e) { console.log('Email init failed:', e.message); }
 
 // ── Cloudinary — permanent image storage ─────────────────────
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
@@ -64,13 +64,13 @@ try {
       api_key:    CLOUDINARY_API_KEY,
       api_secret: CLOUDINARY_API_SECRET,
     });
-    console.log('✅ Cloudinary configured — images are permanent');
-    console.log('   Cloud:', CLOUDINARY_CLOUD_NAME);
+    console.log('Cloudinary configured — images are permanent');
+    console.log('Cloud:', CLOUDINARY_CLOUD_NAME);
   } else {
-    console.log('⚠️  Cloudinary not configured — images will reset on restart!');
-    console.log('   Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET to Render environment');
+    console.log('Cloudinary not configured — images will reset on restart!');
+    console.log('Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET to Render environment');
   }
-} catch(e) { console.log('⚠️  Cloudinary init failed:', e.message); cloudinary = null; }
+} catch(e) { console.log('Cloudinary init failed:', e.message); cloudinary = null; }
 
 // Upload buffer to Cloudinary
 async function uploadToCloudinary(buffer, folder) {
@@ -80,7 +80,7 @@ async function uploadToCloudinary(buffer, folder) {
       { folder: 'printersreports/' + folder, resource_type: 'image' },
       (err, result) => {
         if (err) { console.error('Cloudinary upload error:', err.message); reject(err); }
-        else { console.log('✅ Uploaded to Cloudinary:', result.secure_url); resolve(result.secure_url); }
+        else { console.log('Uploaded to Cloudinary:', result.secure_url); resolve(result.secure_url); }
       }
     );
     if (!stream) { reject(new Error('Cloudinary stream failed')); return; }
@@ -135,7 +135,7 @@ let mongoCollection = null;
 
 async function connectMongo() {
   if (!MONGODB_URI) {
-    console.log('⚠️  MONGODB_URI not set — data will reset on every restart!');
+    console.log('MONGODB_URI not set — data will reset on every restart!');
     return false;
   }
   try {
@@ -146,10 +146,10 @@ async function connectMongo() {
     const db = mongoClient.db('printersreports');
     mongoCollection = db.collection('store');
     await mongoCollection.findOne({ _id: 'ping' });
-    console.log('✅ MongoDB Atlas connected — data is permanent');
+    console.log('MongoDB Atlas connected — data is permanent');
     return true;
   } catch(e) {
-    console.error('❌ MongoDB connection failed:', e.message);
+    console.error('MongoDB connection failed:', e.message);
     mongoClient = null;
     mongoCollection = null;
     return false;
@@ -229,8 +229,8 @@ function getDefaultDb() {
   const adminHash = bcrypt.hashSync('Admin@1234', 12);
   return {
     settings: {
-      logo_url:null, site_name:'PrintersReports', tagline:"India's #1 Printer Reports Store",
-      hero_title:"India's #1 Source for Printer Reports",
+      logo_url:null, site_name:'PrinterSpareParts', tagline:"India's #1 Printer Parts Store",
+      hero_title:"India's #1 Source for Printer Spare Parts",
       hero_subtitle:'Genuine & compatible parts for HP, Canon, Epson, Ricoh, Brother printers.',
       hero_btn_primary:'Shop Now', hero_btn_secondary:'New Arrivals',
       announcement_bar:'Free Shipping on orders above Rs.999 | All Prices Exclusive of 18% GST',
@@ -238,27 +238,27 @@ function getDefaultDb() {
       gst_rate:18, free_shipping_min:999, default_shipping_charge:80,
       shipping_message:'Free shipping on orders above Rs.999',
       show_new_arrivals:true, show_best_sellers:true, show_categories:true,
-      footer_address:'', footer_email:'support@printersreports.in',
+      footer_address:'', footer_email:'support@printersparepts.in',
       working_hours:'Mon-Sat: 10:00 AM - 7:00 PM',
       cancel_window_hours:24, return_window_days:7,
-      meta_title:'PrintersReports - Printer Reports India',
-      meta_description:'Buy genuine printer reports online in India.',
+      meta_title:'PrinterSpareParts - Printer Spare Parts India',
+      meta_description:'Buy genuine printer spare parts online in India.',
       nav_links: JSON.stringify([
-        { label:'Home',        url:'index.html',               icon:'🏠' },
-        { label:'All Products',url:'products.html',            icon:'📦' },
-        { label:'Laser Parts', url:'products.html?cat=laser',  icon:'🖨️' },
-        { label:'Inkjet Parts',url:'products.html?cat=inkjet', icon:'💧' },
-        { label:'Toner Parts', url:'products.html?cat=toner',  icon:'🖤' },
-        { label:'Thermal/POS', url:'products.html?cat=thermal',icon:'🧾' },
-        { label:'Track Order', url:'track.html',               icon:'📦' },
-        { label:'Contact',     url:'contact.html',             icon:'📞' },
+        { label:'Home',        url:'index.html',               icon:'' },
+        { label:'All Products',url:'products.html',            icon:'' },
+        { label:'Laser Parts', url:'products.html?cat=laser',  icon:'' },
+        { label:'Inkjet Parts',url:'products.html?cat=inkjet', icon:'' },
+        { label:'Toner Parts', url:'products.html?cat=toner',  icon:'' },
+        { label:'Thermal/POS', url:'products.html?cat=thermal',icon:'' },
+        { label:'Track Order', url:'track.html',               icon:'' },
+        { label:'Contact',     url:'contact.html',             icon:'' },
       ]),
       social_whatsapp:'', social_facebook:'', social_instagram:'', social_youtube:'',
-      footer_tagline:'Your trusted source for genuine printer reports across India.',
-      footer_copyright:'2025 PrintersReports. All rights reserved.',
+      footer_tagline:'Your trusted source for genuine printer parts across India.',
+      footer_copyright:'2025 PrinterSpareParts. All rights reserved.',
       color_primary:'#0d2c6b', color_secondary:'#1a4298', color_accent:'#00b5d8',
     },
-    users: [{ id:1, name:'Admin', email:'admin@printersreports.in', phone:'', password:adminHash, role:'admin', addresses:[], created_at:new Date().toISOString() }],
+    users: [{ id:1, name:'Admin', email:'admin@printersparepts.in', phone:'', password:adminHash, role:'admin', addresses:[], created_at:new Date().toISOString() }],
     categories: [
       { id:1, name:'Laser Printer Parts',      slug:'laser',    sort_order:1 },
       { id:2, name:'DMP Printer Parts',         slug:'dmp',      sort_order:2 },
@@ -279,25 +279,25 @@ async function setupDatabase() {
   const mongoData = await loadFromMongo();
   if (mongoData && mongoData.users) {
     dbCache = mongoData;
-    console.log('✅ Database loaded from MongoDB Atlas —', mongoData.products?.length||0, 'products,', mongoData.orders?.length||0, 'orders');
+    console.log('Database loaded from MongoDB Atlas —', mongoData.products?.length||0, 'products,', mongoData.orders?.length||0, 'orders');
     return;
   }
   if (fs.existsSync(DB_FILE)) {
     try {
       const fileData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
       dbCache = fileData;
-      console.log('✅ Loaded from local file — migrating to MongoDB...');
+      console.log('Loaded from local file — migrating to MongoDB...');
       await saveToMongo(fileData);
-      console.log('✅ Migrated to MongoDB');
+      console.log('Migrated to MongoDB');
       return;
-    } catch(e) { console.log('⚠️  Could not read local file:', e.message); }
+    } catch(e) { console.log('Could not read local file:', e.message); }
   }
   const defaultDb = getDefaultDb();
   dbCache = defaultDb;
   await saveToMongo(defaultDb);
   try { fs.writeFileSync(DB_FILE, JSON.stringify(defaultDb, null, 2), 'utf8'); } catch(e) {}
-  console.log('✅ Fresh database created');
-  console.log('🔑 Admin: admin@printersreports.in / Admin@1234');
+  console.log('Fresh database created');
+  console.log('Admin: admin@printersparepts.in / Admin@1234');
 }
 
 // ── AUTH MIDDLEWARE ──────────────────────────────────────────
@@ -317,51 +317,190 @@ function adminMiddleware(req, res, next) {
 // ── EMAIL HELPERS ─────────────────────────────────────────────
 async function sendEmail(to, subject, html) {
   if (!transporter) return { sent: false, reason: 'not_configured' };
-  try { await transporter.sendMail({ from: EMAIL_FROM, to, subject, html }); console.log('📧 Email sent to:', to); return { sent: true }; }
-  catch(e) { console.log('📧 Email FAILED to:', to, '|', e.message); return { sent: false, reason: e.message }; }
+  try { await transporter.sendMail({ from: EMAIL_FROM, to, subject, html }); console.log('Email sent to:', to); return { sent: true }; }
+  catch(e) { console.log('Email FAILED to:', to, '|', e.message); return { sent: false, reason: e.message }; }
 }
 
+// ── Order Confirmation Email ──────────────────────────────────
 function orderConfirmationEmail(order, user, items) {
   const itemRows = items.map(i =>
-    `<tr><td style="padding:8px;border-bottom:1px solid #eee">${i.name}</td>
-     <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${i.qty}</td>
-     <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">Rs.${(i.price*i.qty).toLocaleString('en-IN')}</td></tr>`
+    `<tr>
+      <td style="padding:10px 14px;border-bottom:1px solid #eee;font-size:14px;color:#333">${i.name}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #eee;text-align:center;font-size:14px;color:#333">${i.qty}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #eee;text-align:right;font-size:14px;color:#333">Rs.${(i.price).toLocaleString('en-IN')}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #eee;text-align:right;font-size:14px;font-weight:600;color:#333">Rs.${(i.price * i.qty).toLocaleString('en-IN')}</td>
+    </tr>`
   ).join('');
+
   let addr = {};
-  try { addr = JSON.parse(order.shipping_address); } catch(e) {}
-  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
-    <div style="background:#1a4298;color:#fff;padding:24px;text-align:center"><h1 style="margin:0">PrintersReports</h1><p style="margin:8px 0 0;opacity:.8">Order Confirmation</p></div>
-    <div style="padding:24px;background:#f5f8ff">
-      <div style="background:#fff;border-radius:12px;padding:24px;margin-bottom:16px">
-        <h2 style="color:#0d2c6b;margin:0 0 16px">Hello ${user.name},</h2>
-        <p>Your order has been ${order.payment_status==='paid'?'<strong style="color:#22c55e">confirmed</strong>':'placed'}.</p>
-        <div style="background:#f0f4fb;border-radius:8px;padding:16px;margin:16px 0"><strong>Order: ${order.order_number}</strong></div>
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr style="background:#0d2c6b;color:#fff"><th style="padding:10px;text-align:left">Item</th><th style="padding:10px;text-align:center">Qty</th><th style="padding:10px;text-align:right">Price</th></tr></thead>
-          <tbody>${itemRows}</tbody>
-          <tfoot>
-            <tr><td colspan="2" style="padding:8px;text-align:right;color:#777">Subtotal</td><td style="padding:8px;text-align:right">Rs.${order.subtotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
-            <tr><td colspan="2" style="padding:8px;text-align:right;color:#777">GST @18%</td><td style="padding:8px;text-align:right">Rs.${order.gst.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
-            <tr><td colspan="2" style="padding:8px;text-align:right;font-weight:bold">Total</td><td style="padding:8px;text-align:right;font-weight:bold;color:#e53e3e">Rs.${order.total.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
-          </tfoot>
-        </table>
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px">
-        <h3 style="margin:0 0 8px;color:#0d2c6b">Shipping Address</h3>
-        <p style="margin:0;color:#555">${addr.name} | ${addr.phone}<br/>${addr.line}, ${addr.city}, ${addr.state} – ${addr.pin}</p>
-      </div>
-    </div></div>`;
+  try { addr = JSON.parse(order.shipping_address); } catch {}
+  const isPaid = order.payment_status === 'paid';
+  const isCOD  = order.payment_method === 'cod';
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fa">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:24px 0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;max-width:100%">
+  <tr><td style="background:#1a4298;padding:24px 32px;text-align:center">
+    <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700">PrinterSpareParts</h1>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px">Order ${isPaid ? 'Confirmed' : 'Placed'}</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px">
+    <p style="margin:0 0 6px;font-size:15px;color:#333">Hello <strong>${user.name}</strong>,</p>
+    <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.6">
+      ${isPaid
+        ? 'Your payment has been received and your order is confirmed. We will dispatch it shortly.'
+        : isCOD
+          ? 'Your Cash on Delivery order has been placed. Our team will confirm it within 24 hours.'
+          : 'Your order has been placed.'}
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4fb;border-radius:6px;margin-bottom:20px">
+    <tr><td style="padding:14px 16px">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="font-size:13px;color:#666">Order Number</td><td style="font-size:13px;font-weight:700;color:#1a4298;text-align:right">${order.order_number}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Date</td><td style="font-size:13px;text-align:right;padding-top:6px">${new Date(order.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Payment Method</td><td style="font-size:13px;text-align:right;padding-top:6px">${isCOD ? 'Cash on Delivery' : 'Online Payment'}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Payment Status</td><td style="font-size:13px;font-weight:600;text-align:right;padding-top:6px;color:${isPaid ? '#16a34a' : '#d97706'}">${isPaid ? 'Paid' : 'Pending'}</td></tr>
+      </table>
+    </td></tr></table>
+    <h3 style="margin:0 0 12px;font-size:15px;color:#1a4298">Items Ordered</h3>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:20px">
+      <thead><tr style="background:#1a4298">
+        <th style="padding:10px 14px;text-align:left;color:#fff;font-size:12px;font-weight:600">Product</th>
+        <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;font-weight:600">Qty</th>
+        <th style="padding:10px 14px;text-align:right;color:#fff;font-size:12px;font-weight:600">Unit Price</th>
+        <th style="padding:10px 14px;text-align:right;color:#fff;font-size:12px;font-weight:600">Total</th>
+      </tr></thead>
+      <tbody>${itemRows}</tbody>
+      <tfoot>
+        <tr><td colspan="3" style="padding:8px 14px;text-align:right;font-size:13px;color:#555">Subtotal (excl. GST)</td><td style="padding:8px 14px;text-align:right;font-size:13px">Rs.${parseFloat(order.subtotal).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+        <tr><td colspan="3" style="padding:4px 14px;text-align:right;font-size:13px;color:#555">GST (${order.gst_rate||18}%)</td><td style="padding:4px 14px;text-align:right;font-size:13px">Rs.${parseFloat(order.gst).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+        <tr><td colspan="3" style="padding:4px 14px;text-align:right;font-size:13px;color:#555">Shipping</td><td style="padding:4px 14px;text-align:right;font-size:13px;color:#16a34a">${parseFloat(order.shipping)===0?'FREE':'Rs.'+parseFloat(order.shipping).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+        <tr style="background:#e8f0fe"><td colspan="3" style="padding:10px 14px;text-align:right;font-size:15px;font-weight:700;color:#1a4298">Grand Total</td><td style="padding:10px 14px;text-align:right;font-size:15px;font-weight:700;color:#dc2626">Rs.${parseFloat(order.total).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+      </tfoot>
+    </table>
+    <h3 style="margin:0 0 10px;font-size:15px;color:#1a4298">Delivery Address</h3>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:14px 16px;margin-bottom:20px;font-size:14px;color:#444;line-height:1.8">
+      <strong>${addr.name||''}</strong><br/>Phone: ${addr.phone||''}<br/>${addr.line||''}, ${addr.city||''}, ${addr.state||''} - ${addr.pin||''}
+    </div>
+    ${isCOD?`<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#92400e">Please keep <strong>Rs.${parseFloat(order.total).toLocaleString('en-IN',{minimumFractionDigits:2})}</strong> ready at the time of delivery.</div>`:''}
+    <p style="font-size:13px;color:#888;margin:0">Questions about your order? Reply to this email or contact us on WhatsApp.</p>
+  </td></tr>
+  <tr><td style="background:#f0f4fb;padding:14px 32px;text-align:center;font-size:12px;color:#888">&copy; ${new Date().getFullYear()} PrinterSpareParts. All rights reserved.</td></tr>
+</table></td></tr></table>
+</body></html>`;
 }
 
+// ── Order Cancellation Email ──────────────────────────────────
+function orderCancellationEmail(order, user, cancelReason, items) {
+  items = items || [];
+  const itemRows = items.map(i =>
+    `<tr>
+      <td style="padding:8px 14px;border-bottom:1px solid #eee;font-size:13px;color:#333">${i.name}</td>
+      <td style="padding:8px 14px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:#333">${i.qty}</td>
+      <td style="padding:8px 14px;border-bottom:1px solid #eee;text-align:right;font-size:13px;color:#333">Rs.${(i.price * i.qty).toLocaleString('en-IN')}</td>
+    </tr>`
+  ).join('');
+
+  let addr = {};
+  try { addr = JSON.parse(order.shipping_address); } catch {}
+  const wasPaid = order.payment_status === 'paid';
+  const isCOD   = order.payment_method === 'cod';
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fa">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:24px 0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;max-width:100%">
+  <tr><td style="background:#dc2626;padding:24px 32px;text-align:center">
+    <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700">PrinterSpareParts</h1>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px">Order Cancelled</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px">
+    <p style="margin:0 0 6px;font-size:15px;color:#333">Hello <strong>${user.name}</strong>,</p>
+    <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.6">
+      Your order <strong>${order.order_number}</strong> has been cancelled.
+      ${cancelReason ? '<br/>Reason: ' + cancelReason : ''}
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:20px">
+    <tr><td style="padding:14px 16px">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="font-size:13px;color:#666">Order Number</td><td style="font-size:13px;font-weight:700;color:#dc2626;text-align:right">${order.order_number}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Order Date</td><td style="font-size:13px;text-align:right;padding-top:6px">${new Date(order.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Cancelled On</td><td style="font-size:13px;text-align:right;padding-top:6px">${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Order Total</td><td style="font-size:13px;font-weight:600;text-align:right;padding-top:6px">Rs.${parseFloat(order.total).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Payment Method</td><td style="font-size:13px;text-align:right;padding-top:6px">${isCOD ? 'Cash on Delivery' : 'Online Payment'}</td></tr>
+      </table>
+    </td></tr></table>
+    ${items.length ? `
+    <h3 style="margin:0 0 12px;font-size:15px;color:#333">Items in Cancelled Order</h3>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:20px">
+      <thead><tr style="background:#6b7280">
+        <th style="padding:8px 14px;text-align:left;color:#fff;font-size:12px;font-weight:600">Product</th>
+        <th style="padding:8px 14px;text-align:center;color:#fff;font-size:12px;font-weight:600">Qty</th>
+        <th style="padding:8px 14px;text-align:right;color:#fff;font-size:12px;font-weight:600">Amount</th>
+      </tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>` : ''}
+    ${wasPaid ? `
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#166534;line-height:1.6">
+      <strong>Refund Information:</strong><br/>
+      Your payment of Rs.${parseFloat(order.total).toLocaleString('en-IN',{minimumFractionDigits:2})} will be refunded to your original payment method within 5 to 7 business days.
+    </div>` : ''}
+    ${isCOD && !wasPaid ? `
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#555">
+      Since this was a Cash on Delivery order and no payment was made, no refund is required.
+    </div>` : ''}
+    <p style="font-size:13px;color:#888;margin:0">If you did not request this cancellation, please contact us immediately via WhatsApp or by replying to this email.</p>
+  </td></tr>
+  <tr><td style="background:#f0f4fb;padding:14px 32px;text-align:center;font-size:12px;color:#888">&copy; ${new Date().getFullYear()} PrinterSpareParts. All rights reserved.</td></tr>
+</table></td></tr></table>
+</body></html>`;
+}
+
+// ── Order Status Update Email ─────────────────────────────────
 function orderStatusEmail(order, user, newStatus, trackingNumber) {
-  const msg = { confirmed:'Your order has been confirmed.', processing:'Your order is being packed.', shipped:'Your order has been shipped!'+(trackingNumber?` Tracking: <strong>${trackingNumber}</strong>`:''), delivered:'Your order has been delivered. Thank you!', cancelled:'Your order has been cancelled.' };
-  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
-    <div style="background:#1a4298;color:#fff;padding:24px;text-align:center"><h1 style="margin:0">PrintersReports</h1></div>
-    <div style="padding:24px;background:#f5f8ff"><div style="background:#fff;border-radius:12px;padding:24px">
-      <h2 style="color:#0d2c6b">Order Update</h2>
-      <p>Hello ${user.name},</p><p>${msg[newStatus]||'Your order status has been updated.'}</p>
-      <div style="background:#f0f4fb;border-radius:8px;padding:16px"><strong>Order: ${order.order_number}</strong><br/><strong>Status: ${newStatus.toUpperCase()}</strong></div>
-    </div></div></div>`;
+  const msgs = {
+    confirmed:  'Your order has been confirmed and is being prepared for dispatch.',
+    processing: 'Your order is currently being packed.',
+    shipped:    'Your order has been shipped.' + (trackingNumber ? ' Tracking number: <strong>' + trackingNumber + '</strong>' : ''),
+    delivered:  'Your order has been delivered. Thank you for shopping with us.',
+    cancelled:  'Your order has been cancelled. If you paid online, a refund will be processed within 5 to 7 business days.',
+  };
+  const headerColors = { confirmed:'#1a4298', processing:'#0891b2', shipped:'#0891b2', delivered:'#16a34a', cancelled:'#dc2626' };
+  const bg  = headerColors[newStatus] || '#1a4298';
+  const msg = msgs[newStatus] || 'Your order status has been updated.';
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fa">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:24px 0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;max-width:100%">
+  <tr><td style="background:${bg};padding:24px 32px;text-align:center">
+    <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700">PrinterSpareParts</h1>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px">Order Update</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px">
+    <p style="margin:0 0 8px;font-size:15px;color:#333">Hello <strong>${user.name}</strong>,</p>
+    <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.6">${msg}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4fb;border-radius:6px;margin-bottom:20px">
+    <tr><td style="padding:14px 16px">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="font-size:13px;color:#666">Order Number</td><td style="font-size:13px;font-weight:700;color:${bg};text-align:right">${order.order_number}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Status</td><td style="font-size:13px;font-weight:600;text-align:right;padding-top:6px;text-transform:capitalize;color:${bg}">${newStatus}</td></tr>
+        <tr><td style="font-size:13px;color:#666;padding-top:6px">Order Total</td><td style="font-size:13px;font-weight:600;text-align:right;padding-top:6px">Rs.${parseFloat(order.total).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+        ${trackingNumber?`<tr><td style="font-size:13px;color:#666;padding-top:6px">Tracking Number</td><td style="font-size:13px;font-weight:600;text-align:right;padding-top:6px;font-family:monospace">${trackingNumber}</td></tr>`:''}
+      </table>
+    </td></tr></table>
+    <p style="font-size:13px;color:#888;margin:0">Questions? Contact us on WhatsApp or reply to this email.</p>
+  </td></tr>
+  <tr><td style="background:#f0f4fb;padding:14px 32px;text-align:center;font-size:12px;color:#888">&copy; ${new Date().getFullYear()} PrinterSpareParts. All rights reserved.</td></tr>
+</table></td></tr></table>
+</body></html>`;
 }
 
 function logOrderEvent(db, orderId, status, note, actorRole) {
@@ -375,19 +514,19 @@ function logOrderEvent(db, orderId, status, note, actorRole) {
 app.get('/api/debug', adminMiddleware, (req, res) => {
   const db = readDB();
   res.json({
-    cloudinary:  cloudinary  ? '✅ configured' : '❌ NOT configured — images will reset!',
-    mongodb:     mongoCollection ? '✅ connected' : '❌ NOT connected — data will reset!',
-    razorpay:    razorpay    ? '✅ configured' : '❌ not configured',
-    email:       transporter ? '✅ configured' : '❌ not configured',
+    cloudinary:  cloudinary  ? 'configured' : 'NOT configured — images will reset!',
+    mongodb:     mongoCollection ? 'connected' : 'NOT connected — data will reset!',
+    razorpay:    razorpay    ? 'configured' : 'not configured',
+    email:       transporter ? 'configured' : 'not configured',
     logo_url:    db.settings.logo_url || 'none',
     products:    db.products.length,
     env_check: {
-      CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ? '✅ set' : '❌ MISSING',
-      CLOUDINARY_API_KEY:    process.env.CLOUDINARY_API_KEY    ? '✅ set' : '❌ MISSING',
-      CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? '✅ set' : '❌ MISSING',
-      MONGODB_URI:           process.env.MONGODB_URI           ? '✅ set' : '❌ MISSING',
-      RAZORPAY_KEY_ID:       process.env.RAZORPAY_KEY_ID       ? '✅ set' : '❌ MISSING',
-      RAZORPAY_KEY_SECRET:   process.env.RAZORPAY_KEY_SECRET   ? '✅ set' : '❌ MISSING',
+      CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'MISSING',
+      CLOUDINARY_API_KEY:    process.env.CLOUDINARY_API_KEY    ? 'set' : 'MISSING',
+      CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? 'set' : 'MISSING',
+      MONGODB_URI:           process.env.MONGODB_URI           ? 'set' : 'MISSING',
+      RAZORPAY_KEY_ID:       process.env.RAZORPAY_KEY_ID       ? 'set' : 'MISSING',
+      RAZORPAY_KEY_SECRET:   process.env.RAZORPAY_KEY_SECRET   ? 'set' : 'MISSING',
     }
   });
 });
@@ -422,7 +561,7 @@ app.post('/api/settings/logo', adminMiddleware, uploadLogo.single('logo'), async
     }
     db.settings.logo_url = logoUrl;
     writeDB(db);
-    console.log('✅ Logo saved. URL:', logoUrl);
+    console.log('Logo saved. URL:', logoUrl);
     res.json({ message: 'Logo uploaded', logo_url: logoUrl });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Upload failed: ' + e.message }); }
 });
@@ -523,9 +662,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     if (!user.email) return res.status(400).json({ error: 'No email address linked to this account.' });
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore.set(user.email, { otp, expires: Date.now() + 10*60*1000, userId: user.id, name: user.name });
-    const emailHtml = `<div style="font-family:Arial,sans-serif;max-width:500px;margin:auto"><div style="background:#1a4298;color:#fff;padding:24px;text-align:center;border-radius:12px 12px 0 0"><h2 style="margin:0">PrintersReports</h2><p style="margin:6px 0 0;opacity:.8">Password Reset OTP</p></div><div style="background:#f5f8ff;padding:28px;border-radius:0 0 12px 12px"><p>Hello <strong>${user.name}</strong>,</p><div style="background:#fff;border:2px solid #00b5d8;border-radius:12px;text-align:center;padding:20px;margin:20px 0"><div style="font-size:40px;font-weight:800;letter-spacing:12px;color:#0d2c6b;font-family:monospace">${otp}</div><div style="font-size:13px;color:#888;margin-top:8px">Valid for 10 minutes only</div></div><p style="color:#e53e3e;font-size:13px">⚠️ Never share this OTP with anyone.</p></div></div>`;
-    const emailResult = await sendEmail(user.email, 'Your OTP for Password Reset — PrintersReports', emailHtml);
-    console.log('\n🔑 PASSWORD RESET OTP — Email:', user.email, '| OTP:', otp, '\n');
+    const emailHtml = `<div style="font-family:Arial,sans-serif;max-width:500px;margin:auto"><div style="background:#1a4298;color:#fff;padding:24px;text-align:center;border-radius:12px 12px 0 0"><h2 style="margin:0">PrinterSpareParts</h2><p style="margin:6px 0 0;opacity:.8">Password Reset OTP</p></div><div style="background:#f5f8ff;padding:28px;border-radius:0 0 12px 12px"><p>Hello <strong>${user.name}</strong>,</p><div style="background:#fff;border:2px solid #00b5d8;border-radius:12px;text-align:center;padding:20px;margin:20px 0"><div style="font-size:40px;font-weight:800;letter-spacing:12px;color:#0d2c6b;font-family:monospace">${otp}</div><div style="font-size:13px;color:#888;margin-top:8px">Valid for 10 minutes only</div></div><p style="color:#e53e3e;font-size:13px">Never share this OTP with anyone.</p></div></div>`;
+    const emailResult = await sendEmail(user.email, 'Your OTP for Password Reset — PrinterSpareParts', emailHtml);
+    console.log('\nPASSWORD RESET OTP — Email:', user.email, '| OTP:', otp, '\n');
     const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1****$3');
     if (!emailResult || !emailResult.sent) {
       const isNotConfigured = emailResult?.reason === 'not_configured';
@@ -675,7 +814,7 @@ app.delete('/api/products/:id/image', adminMiddleware, async (req, res) => {
 app.post('/api/products/:id/reviews', authMiddleware, (req, res) => {
   try {
     const { rating, title, comment } = req.body;
-    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error:'Rating must be 1–5' });
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error:'Rating must be 1 to 5' });
     if (!comment) return res.status(400).json({ error:'Review comment is required' });
     const db = readDB(), product = db.products.find(p => p.id===parseInt(req.params.id));
     if (!product) return res.status(404).json({ error:'Product not found' });
@@ -762,7 +901,7 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
     if (razorpay_signature && RAZORPAY_KEY_SECRET) {
       const expected = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET).update(razorpay_order_id+'|'+razorpay_payment_id).digest('hex');
       signatureValid = (expected === razorpay_signature);
-      console.log('Signature check:', signatureValid ? '✅ VALID' : '❌ MISMATCH', '| payment:', razorpay_payment_id);
+      console.log('Signature check:', signatureValid ? 'VALID' : 'MISMATCH', '| payment:', razorpay_payment_id);
     }
     if (!signatureValid) {
       if (!razorpay) return res.status(503).json({ error: 'Payment gateway not configured. Payment ID: '+razorpay_payment_id });
@@ -771,7 +910,7 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
         if (!payment || (payment.status !== 'captured' && payment.status !== 'authorized') || payment.order_id !== razorpay_order_id) {
           return res.status(400).json({ error: 'Payment not verified. Status: '+(payment?.status||'unknown')+'. Payment ID: '+razorpay_payment_id });
         }
-        console.log('✅ Payment verified via Razorpay API');
+        console.log('Payment verified via Razorpay API');
       } catch(apiErr) {
         console.error('Razorpay API verify failed:', apiErr.message);
         return res.status(400).json({ error: 'Payment verification failed. Payment ID: '+razorpay_payment_id+'. Please WhatsApp us — we will confirm manually.' });
@@ -794,8 +933,8 @@ app.post('/api/payment/verify', authMiddleware, async (req, res) => {
     logOrderEvent(db, orderId, 'confirmed', 'Order confirmed — online payment received via Razorpay', 'system');
     writeDB(db);
     const user = db.users.find(u => u.id === req.user.id);
-    if (user?.email) sendEmail(user.email, `Order Confirmed — ${order_number} | PrintersReports`, orderConfirmationEmail(order, user, resolvedItems));
-    console.log('✅ Order created:', order_number, '| total: Rs.', total);
+    if (user?.email) sendEmail(user.email, `Order Confirmed – ${order_number} | PrinterSpareParts`, orderConfirmationEmail(order, user, resolvedItems));
+    console.log('Order created:', order_number, '| total: Rs.', total);
     res.json({ success:true, message:'Payment verified. Order confirmed!', order_id:orderId, order_number, total });
   } catch(e) { console.error('verify endpoint error:', e); res.status(500).json({ error:'Order creation failed: '+e.message }); }
 });
@@ -827,7 +966,7 @@ app.post('/api/payment/recover', authMiddleware, async (req, res) => {
     logOrderEvent(db, orderId, 'confirmed', 'Order recovered — Razorpay payment '+razorpay_payment_id+' verified via API', 'system');
     writeDB(db);
     const user = db.users.find(u => u.id === req.user.id);
-    if (user?.email) sendEmail(user.email, 'Order Confirmed — '+order_number+' | PrintersReports', orderConfirmationEmail(order, user, resolvedItems));
+    if (user?.email) sendEmail(user.email, `Order Confirmed – ${order_number} | PrinterSpareParts`, orderConfirmationEmail(order, user, resolvedItems));
     res.json({ success:true, message:'Order recovered and confirmed!', order_number, order_id:orderId, total });
   } catch(e) { console.error('Recovery failed:', e); res.status(500).json({ error:'Recovery failed: '+e.message }); }
 });
@@ -856,7 +995,7 @@ app.post('/api/orders/cod', authMiddleware, async (req, res) => {
     logOrderEvent(db, orderId, 'pending', 'COD order placed — awaiting confirmation', 'system');
     writeDB(db);
     const user = db.users.find(u=>u.id===req.user.id);
-    if (user?.email) sendEmail(user.email, `Order Placed — ${order_number} | PrintersReports`, orderConfirmationEmail(order, user, resolvedItems));
+    if (user?.email) sendEmail(user.email, `Order Placed – ${order_number} | PrinterSpareParts`, orderConfirmationEmail(order, user, resolvedItems));
     res.json({ success:true, message:'COD order placed', order_id:orderId, order_number, total });
   } catch(e) { console.error(e); res.status(500).json({ error:'Order failed: '+e.message }); }
 });
@@ -890,6 +1029,7 @@ app.get('/api/orders/:id', authMiddleware, (req, res) => {
   res.json({ ...order, items, events });
 });
 
+// ── Cancel Order (sends full cancellation email) ──────────────
 app.post('/api/orders/:id/cancel', authMiddleware, (req, res) => {
   try {
     const db = readDB(), idx = db.orders.findIndex(o=>o.id===parseInt(req.params.id)&&o.user_id===req.user.id);
@@ -906,7 +1046,18 @@ app.post('/api/orders/:id/cancel', authMiddleware, (req, res) => {
     logOrderEvent(db, order.id, 'cancelled', 'Order cancelled by customer: '+reason, 'customer');
     writeDB(db);
     const user = db.users.find(u=>u.id===req.user.id);
-    if (user?.email) sendEmail(user.email, `Order Cancelled — ${order.order_number} | PrintersReports`, orderStatusEmail(order, user, 'cancelled', null));
+    if (user?.email) {
+      // Build item list for cancellation email
+      const orderItems = ois.map(i => {
+        const p = db.products.find(p => p.id === i.product_id);
+        return { name: p?.name || 'Product', qty: i.qty, price: i.price };
+      });
+      sendEmail(
+        user.email,
+        `Order Cancelled – ${order.order_number} | PrinterSpareParts`,
+        orderCancellationEmail({ ...db.orders[idx], cancel_reason: reason }, user, reason, orderItems)
+      );
+    }
     res.json({ success:true, message:'Order cancelled successfully.' });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
 });
@@ -941,7 +1092,7 @@ app.put('/api/orders/:id/status', adminMiddleware, async (req, res) => {
     logOrderEvent(db, db.orders[idx].id, status, note||('Status changed from '+old+' to '+status+' by admin'), 'admin');
     writeDB(db);
     const user = db.users.find(u=>u.id===db.orders[idx].user_id);
-    if (user?.email) sendEmail(user.email, `Order ${status.charAt(0).toUpperCase()+status.slice(1)} — ${db.orders[idx].order_number} | PrintersReports`, orderStatusEmail(db.orders[idx], user, status, tracking_number));
+    if (user?.email) sendEmail(user.email, `Order ${status.charAt(0).toUpperCase()+status.slice(1)} – ${db.orders[idx].order_number} | PrinterSpareParts`, orderStatusEmail(db.orders[idx], user, status, tracking_number));
     res.json({ message:'Order updated and customer notified' });
   } catch(e) { console.error(e); res.status(500).json({ error:'Server error' }); }
 });
@@ -1195,7 +1346,7 @@ app.post('/api/contact', (req, res) => {
   if (!name||!message) return res.status(400).json({ error:'Name and message are required' });
   db.enquiries.push({ id:nextId(db.enquiries), name:sanitize(name), email:sanitize(email)||null, phone:sanitize(phone)||null, message:sanitize(message), is_read:false, created_at:new Date().toISOString() });
   writeDB(db);
-  if (transporter) sendEmail(EMAIL_USER, 'New Contact Enquiry — PrintersReports', `<p>From: ${name} (${email||'no email'}) — ${phone||'no phone'}</p><p>${message}</p>`);
+  if (transporter) sendEmail(EMAIL_USER, 'New Contact Enquiry — PrinterSpareParts', `<p>From: ${name} (${email||'no email'}) — ${phone||'no phone'}</p><p>${message}</p>`);
   res.json({ message:'Enquiry submitted. We will contact you within 24 hours.' });
 });
 
@@ -1205,14 +1356,11 @@ app.post('/api/contact', (req, res) => {
 setupDatabase().then(() => {
   app.listen(PORT, () => {
     console.log('');
-    console.log('╔══════════════════════════════════════════════════╗');
-    console.log('║   PrintersReports Production Backend             ║');
-    console.log(`║   Running at: http://localhost:${PORT}               ║`);
-    console.log(`║   Cloudinary: ${cloudinary     ? 'CONFIGURED ✅ (images permanent)' : 'NOT configured ⚠️ (images reset!)'}  ║`);
-    console.log(`║   Razorpay:   ${razorpay    ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
-    console.log(`║   Email:      ${transporter ? 'CONFIGURED ✅' : 'NOT configured ⚠️ '}              ║`);
-    console.log(`║   Database:   ${mongoCollection ? 'MongoDB Atlas ✅ (permanent)' : 'Local file ⚠️  (resets!)  '}  ║`);
-    console.log('╚══════════════════════════════════════════════════╝');
+    console.log('PrinterSpareParts Backend running on port ' + PORT);
+    console.log('Cloudinary: ' + (cloudinary ? 'configured (images permanent)' : 'NOT configured (images reset on restart)'));
+    console.log('Razorpay:   ' + (razorpay   ? 'configured' : 'NOT configured'));
+    console.log('Email:      ' + (transporter ? 'configured' : 'NOT configured'));
+    console.log('Database:   ' + (mongoCollection ? 'MongoDB Atlas (permanent)' : 'Local file (resets on restart)'));
     console.log('');
   });
 }).catch(err => { console.error('Fatal startup error:', err); process.exit(1); });
