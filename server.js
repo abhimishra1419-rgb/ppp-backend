@@ -20,6 +20,7 @@ const nodemailer  = require('nodemailer');
 const Razorpay    = require('razorpay');
 
 const app     = express();
+app.set('trust proxy', 1);
 const PORT    = process.env.PORT    || 5000;
 const JWT_SECRET   = process.env.JWT_SECRET    || 'printersreports_secret_change_in_production';
 const BASE_URL     = process.env.BASE_URL      || ('http://localhost:' + PORT);
