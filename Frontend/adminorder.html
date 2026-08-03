@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Manage Orders – Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body{display:flex;min-height:100vh;flex-direction:column}
+    .admin-wrap{display:flex;flex:1}
+    .admin-sidebar{width:260px;background:var(--blue-dark);color:#fff;flex-shrink:0;height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+    .sidebar-logo{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo strong{font-family:'Syne',sans-serif;font-size:1rem;display:block}
+    .sidebar-logo span{font-size:.72rem;opacity:.6}
+    .admin-nav{flex:1;padding:12px 0}
+    .admin-nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,.75);text-decoration:none;font-size:.88rem;transition:.2s}
+    .admin-nav a:hover,.admin-nav a.active{background:rgba(255,255,255,.12);color:#fff}
+    .admin-nav a.active{border-left:3px solid var(--teal)}
+    .admin-nav .sec-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;opacity:.5;padding:16px 20px 6px}
+    .sidebar-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+    .sidebar-bottom a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
+    .admin-main{flex:1;overflow-x:hidden}
+    .admin-topbar{background:#fff;border-bottom:1px solid var(--grey-1);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .admin-topbar h2{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--blue-dark)}
+    .admin-content{padding:28px}
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+    .stat-box{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--card-shadow);text-align:center}
+    .stat-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800}
+    .stat-lbl{font-size:.72rem;color:var(--text-light);margin-top:2px}
+    .filters-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+    .filter-tab{padding:7px 16px;border-radius:30px;border:1.5px solid var(--grey-2);background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif}
+    .filter-tab.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark)}
+    .order-card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 2px 12px rgba(13,44,107,.07);transition:.2s}
+    .order-card:hover{box-shadow:0 4px 20px rgba(13,44,107,.12)}
+    .order-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+    .order-num{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--blue-dark)}
+    .order-meta{font-size:.75rem;color:var(--text-light);margin-top:2px}
+    .order-mid{font-size:.82rem;color:var(--text-light);margin-bottom:12px;line-height:1.6}
+    .order-bot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .order-total{font-weight:700;color:var(--red);font-size:.95rem}
+    .pay-status-paid{color:var(--green);font-weight:600;font-size:.8rem}
+    .pay-status-pending{color:var(--orange);font-weight:600;font-size:.8rem}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .modal-header{background:var(--blue-dark);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:1}
+    .modal-header h3{font-family:'Syne',sans-serif;font-size:.95rem}
+    .modal-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer}
+    .modal-body{padding:20px}
+    .modal-footer{padding:14px 20px;border-top:1px solid var(--grey-1);display:flex;gap:10px;justify-content:flex-end}
+    .status-select{width:100%;padding:10px 12px;border:1.5px solid var(--grey-2);border-radius:8px;font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none}
+    .status-select:focus{border-color:var(--teal)}
+    .detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--grey-1);font-size:.85rem}
+    .detail-row:last-child{border-bottom:none}
+    .detail-key{color:var(--text-light)}
+    .detail-val{font-weight:600;text-align:right}
+    @media(max-width:900px){.admin-sidebar{display:none}}
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="admin-wrap">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo"><strong>Printer Spare Parts</strong><span>Admin Panel</span></div>
+    <nav class="admin-nav">
+      <div class="sec-lbl">Main</div>
+      <a href="admindashboard.html">Dashboard</a>
+      <a href="adminorder.html" class="active">Orders</a>
+      <a href="adminproduct.html">Products</a>
+      <div class="sec-lbl">Settings</div>
+      <a href="adminsetting.html">Page Content &amp; Settings</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="index.html" target="_blank">View Store</a>
+      <a href="#" onclick="Auth.logout()" style="color:#f87171">Logout</a>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h2>📦 Manage Orders</h2>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+    <div class="admin-content">
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" id="s-all">0</div><div class="stat-lbl">All Orders</div></div>
+        <div class="stat-box" style="border-top:3px solid var(--orange)"><div class="stat-val" id="s-pending" style="color:var(--orange)">0</div><div class="stat-lbl">Pending</div></div>
+        <div class="stat-box" style="border-top:3px solid var(--blue-mid)"><div class="stat-val" id="s-confirmed" style="color:var(--blue-mid)">0</div><div class="stat-lbl">Confirmed</div></div>
+        <div class="stat-box" style="border-top:3px solid var(--teal)"><div class="stat-val" id="s-shipped" style="color:var(--teal)">0</div><div class="stat-lbl">Shipped</div></div>
+        <div class="stat-box" style="border-top:3px solid var(--green)"><div class="stat-val" id="s-delivered" style="color:var(--green)">0</div><div class="stat-lbl">Delivered</div></div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filters-bar">
+        <button class="filter-tab active" onclick="filterOrders('all',this)">All</button>
+        <button class="filter-tab" onclick="filterOrders('pending',this)">⏳ Pending</button>
+        <button class="filter-tab" onclick="filterOrders('confirmed',this)">✅ Confirmed</button>
+        <button class="filter-tab" onclick="filterOrders('processing',this)">⚙️ Processing</button>
+        <button class="filter-tab" onclick="filterOrders('shipped',this)">🚚 Shipped</button>
+        <button class="filter-tab" onclick="filterOrders('delivered',this)">📬 Delivered</button>
+        <button class="filter-tab" onclick="filterOrders('cancelled',this)">❌ Cancelled</button>
+        <input type="text" id="orderSearch" style="margin-left:auto;padding:7px 12px;border:1.5px solid var(--grey-2);border-radius:8px;font-size:.82rem;outline:none;width:200px" placeholder="Search order # or name..." oninput="searchOrders(this.value)"/>
+      </div>
+
+      <div id="ordersList">
+        <div style="text-align:center;padding:60px;color:var(--text-light)">⏳ Loading orders...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Order: <span id="modalOrderNum"></span></h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalDetails"></div>
+      <hr style="margin:16px 0;border-color:var(--grey-1)"/>
+      <h4 style="font-family:'Syne',sans-serif;margin-bottom:12px;font-size:.9rem">Update Order Status</h4>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="modalStatus" class="status-select">
+          <option value="pending">⏳ Pending</option>
+          <option value="confirmed">✅ Confirmed</option>
+          <option value="processing">⚙️ Processing</option>
+          <option value="shipped">🚚 Shipped</option>
+          <option value="delivered">📬 Delivered</option>
+          <option value="cancelled">❌ Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tracking Number</label>
+        <input type="text" id="modalTracking" class="form-control" placeholder="e.g. 123456789IN (Delhivery/India Post)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tracking URL (optional)</label>
+        <input type="text" id="modalTrackingUrl" class="form-control" placeholder="e.g. https://www.delhivery.com/track/..."/>
+        <div class="form-hint">Customer will see a link to track on courier website</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="updateBtn" onclick="updateOrderStatus()">💾 Update Status</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAdmin();
+const API = Auth.API_BASE;
+let allOrders = [], currentFilter = 'all', currentOrderId = null;
+
+const STATUS_COLOR = { pending:'badge-warning', confirmed:'badge-info', processing:'badge-info', shipped:'badge-info', delivered:'badge-success', cancelled:'badge-danger' };
+const PAY_COLOR    = { paid:'pay-status-paid', pending:'pay-status-pending' };
+
+async function loadOrders() {
+  let attempts=0;
+  while(attempts<15){
+    attempts++;
+    try {
+      const token = Auth.getToken();
+      const res   = await fetch(API+'/admin/orders?limit=200', { headers:{ Authorization:'Bearer '+token }, cache:'no-store' });
+      const ct    = res.headers.get('content-type')||'';
+      if (!ct.includes('application/json')) throw new Error('not json');
+      const data  = await res.json();
+      allOrders   = data.orders||[];
+      updateStats();
+      renderOrders(allOrders);
+      return;
+    } catch(e) {
+      document.getElementById('ordersList').innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-light)">⏳ Connecting to server'+(attempts>1?' ('+attempts*3+'s)':'')+'...</div>';
+      await new Promise(r=>setTimeout(r,3000));
+    }
+  }
+  document.getElementById('ordersList').innerHTML = '<div style="text-align:center;padding:60px;color:var(--red)">Could not load orders. <a href="javascript:location.reload()">Refresh</a></div>';
+}
+
+function updateStats() {
+  document.getElementById('s-all').textContent       = allOrders.length;
+  document.getElementById('s-pending').textContent   = allOrders.filter(o=>o.status==='pending').length;
+  document.getElementById('s-confirmed').textContent = allOrders.filter(o=>o.status==='confirmed').length;
+  document.getElementById('s-shipped').textContent   = allOrders.filter(o=>o.status==='shipped').length;
+  document.getElementById('s-delivered').textContent = allOrders.filter(o=>o.status==='delivered').length;
+}
+
+function formatItemsText(order) {
+  if (Array.isArray(order?.item_details) && order.item_details.length) {
+    return order.item_details.map(item => `${item.name} ×${item.qty}`).join('<br>');
+  }
+  return order?.items || '—';
+}
+
+function renderOrders(list) {
+  if (!list.length) { document.getElementById('ordersList').innerHTML='<div style="text-align:center;padding:60px;color:var(--text-light)"><h3>No orders found</h3></div>'; return; }
+  document.getElementById('ordersList').innerHTML = list.map(o => {
+    let addr = '';
+    try { const a=JSON.parse(o.shipping_address); addr=a.name+', '+a.city+', '+a.state; } catch(e){}
+    return '<div class="order-card">' +
+      '<div class="order-top">' +
+        '<div><div class="order-num">'+o.order_number+'</div>' +
+        '<div class="order-meta">'+new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' · '+o.customer_name+' · '+o.customer_phone+'</div></div>' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+        '<span class="badge '+STATUS_COLOR[o.status]+'">'+o.status+'</span>' +
+        '<span class="'+(PAY_COLOR[o.payment_status]||'')+'">'+
+          (o.payment_status==='paid'?'✅ PAID':o.payment_method==='cod'?'💵 COD':'⏳ Unpaid')+
+        '</span></div>' +
+      '</div>' +
+      '<div class="order-mid">'+formatItemsText(o)+'<br><span style="font-size:.75rem">📍 '+addr+'</span></div>' +
+      '<div class="order-bot">' +
+        '<span class="order-total">Rs.'+parseFloat(o.total).toLocaleString('en-IN',{minimumFractionDigits:2})+'</span>' +
+        '<button class="btn btn-primary btn-sm" onclick="openOrderModal('+o.id+')">✏️ Update Status</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function filterOrders(status, btn) {
+  currentFilter=status;
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn?.classList.add('active');
+  const filtered = status==='all' ? allOrders : allOrders.filter(o=>o.status===status);
+  renderOrders(filtered);
+}
+
+function searchOrders(q) {
+  if (!q) { filterOrders(currentFilter, null); return; }
+  const filtered = allOrders.filter(o =>
+    o.order_number.includes(q.toUpperCase()) ||
+    (o.customer_name||'').toLowerCase().includes(q.toLowerCase()) ||
+    (o.customer_phone||'').includes(q)
+  );
+  renderOrders(filtered);
+}
+
+function openOrderModal(id) {
+  const o = allOrders.find(x=>x.id===id);
+  if (!o) return;
+  currentOrderId = id;
+  document.getElementById('modalOrderNum').textContent = o.order_number;
+  document.getElementById('modalStatus').value         = o.status;
+  document.getElementById('modalTracking').value       = o.tracking_number||'';
+  document.getElementById('modalTrackingUrl').value    = o.tracking_url||'';
+  let addr='';
+  try { const a=JSON.parse(o.shipping_address); addr='<strong>'+a.name+'</strong> | 📱 '+(a.phone||'')+' | '+a.line+', '+a.city+', '+a.state+' – '+a.pin; } catch(e){}
+  document.getElementById('modalDetails').innerHTML =
+    '<div class="detail-row"><span class="detail-key">Customer</span><span class="detail-val">'+(o.customer_name||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val">'+(o.customer_phone||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">'+(o.customer_email||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Payment</span><span class="detail-val">'+(o.payment_method==='cod'?'Cash on Delivery (COD)':'Online – '+(o.razorpay_payment_id||''))+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Payment Status</span><span class="detail-val">'+(o.payment_status==='paid'?'<span style="color:var(--green)">✅ PAID</span>':'<span style="color:var(--orange)">⏳ Pending</span>')+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Total</span><span class="detail-val" style="color:var(--red)">Rs.'+parseFloat(o.total).toLocaleString('en-IN',{minimumFractionDigits:2})+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Items</span><span class="detail-val" style="font-size:.8rem;text-align:right">'+formatItemsText(o)+'</span></div>' +
+    '<div class="detail-row"><span class="detail-key">Address</span><span class="detail-val" style="font-size:.8rem;text-align:right">'+addr+'</span></div>';
+  document.getElementById('orderModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('orderModal').classList.remove('open'); }
+
+async function updateOrderStatus() {
+  if (!currentOrderId) return;
+  const status      = document.getElementById('modalStatus').value;
+  const tracking    = document.getElementById('modalTracking').value.trim();
+  const trackingUrl = document.getElementById('modalTrackingUrl').value.trim();
+  const btn = document.getElementById('updateBtn');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  try {
+    await Auth.wakeUp();
+    const token = Auth.getToken();
+    const res   = await fetch(API+'/orders/'+currentOrderId+'/status', {
+      method:'PUT',
+      headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+      body:JSON.stringify({ status, tracking_number:tracking||null, tracking_url:trackingUrl||null }),
+    });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    // Update local data
+    const idx = allOrders.findIndex(o=>o.id===currentOrderId);
+    if (idx!==-1) { allOrders[idx].status=status; if(tracking) allOrders[idx].tracking_number=tracking; }
+    showToast('Order status updated to: '+status, 'success');
+    closeModal();
+    updateStats();
+    filterOrders(currentFilter, null);
+  } catch(e) { showToast('Update failed: '+e.message, 'error'); }
+  btn.innerHTML='💾 Update Status'; btn.disabled=false;
+}
+
+function exportCSV() {
+  const headers=['Order#','Customer','Phone','Email','Items','Total','Payment','Status','Date'];
+  const rows=allOrders.map(o=>[o.order_number,o.customer_name,o.customer_phone,o.customer_email,'"'+(o.items||'')+'"',o.total,o.payment_method,o.status,o.created_at]);
+  const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='orders_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  showToast('CSV exported', 'success');
+}
+
+loadOrders();
+</script>
+</body>
+</html>

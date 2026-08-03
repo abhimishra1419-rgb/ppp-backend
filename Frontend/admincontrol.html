@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Control Panel – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body{display:flex;min-height:100vh;flex-direction:column}
+    .admin-wrap{display:flex;flex:1}
+    .admin-sidebar{width:240px;background:var(--blue-dark);color:#fff;flex-shrink:0;min-height:100vh;display:flex;flex-direction:column}
+    .sidebar-logo{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo strong{font-family:'Syne',sans-serif;font-size:.95rem;display:block}
+    .sidebar-logo span{font-size:.7rem;opacity:.55}
+    .admin-nav{flex:1;padding:10px 0}
+    .admin-nav a{display:flex;align-items:center;gap:10px;padding:11px 18px;color:rgba(255,255,255,.75);text-decoration:none;font-size:.84rem;transition:.2s}
+    .admin-nav a:hover,.admin-nav a.active{background:rgba(255,255,255,.12);color:#fff}
+    .admin-nav a.active{border-left:3px solid var(--teal)}
+    .admin-nav .sec{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;opacity:.45;padding:14px 18px 4px}
+    .sidebar-bottom{padding:14px 18px;border-top:1px solid rgba(255,255,255,.1)}
+    .sidebar-bottom a{color:rgba(255,255,255,.55);text-decoration:none;font-size:.82rem;display:block;margin-bottom:6px}
+    .admin-main{flex:1;overflow-x:hidden;background:var(--off-white)}
+    .admin-topbar{background:#fff;border-bottom:1px solid var(--grey-1);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:10px}
+    .admin-topbar h2{font-family:'Syne',sans-serif;font-size:1.05rem;color:var(--blue-dark);margin:0}
+    .admin-content{padding:24px}
+    .tab-pills{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+    .pill{padding:8px 18px;border-radius:30px;border:1.5px solid var(--grey-2);background:#fff;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'DM Sans',sans-serif;transition:.2s;color:var(--text)}
+    .pill:hover{border-color:var(--teal);color:var(--teal)}
+    .pill.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark)}
+    .cp{display:none}.cp.active{display:block}
+    .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+    .search-input{padding:9px 14px;border:1.5px solid var(--grey-2);border-radius:8px;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none;min-width:220px}
+    .search-input:focus{border-color:var(--teal)}
+    .data-table{background:#fff;border-radius:12px;box-shadow:var(--card-shadow);overflow:hidden}
+    .data-table table{min-width:700px}
+    .action-btns{display:flex;gap:6px;flex-wrap:wrap}
+    .danger-zone{background:#fff5f5;border:2px solid #fecaca;border-radius:12px;padding:20px;margin-bottom:20px}
+    .danger-zone h3{color:var(--red);font-family:'Syne',sans-serif;font-size:.95rem;margin-bottom:10px}
+    .danger-zone p{font-size:.84rem;color:var(--text-light);margin-bottom:14px}
+    .stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+    .stat-mini{background:#fff;border-radius:10px;padding:14px;box-shadow:var(--card-shadow);text-align:center}
+    .stat-mini .num{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--blue-dark)}
+    .stat-mini .lbl{font-size:.72rem;color:var(--text-light);margin-top:3px}
+    .edit-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s}
+    .edit-modal-overlay.open{opacity:1;pointer-events:all}
+    .edit-modal{background:#fff;border-radius:16px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+    .em-header{background:var(--blue-dark);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:1}
+    .em-header h3{font-family:'Syne',sans-serif;font-size:.95rem;margin:0}
+    .em-close{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer}
+    .em-body{padding:20px}
+    .em-footer{padding:14px 20px;border-top:1px solid var(--grey-1);display:flex;gap:8px;justify-content:flex-end}
+    .confirm-del{background:#fff3f3;border:1.5px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:14px;font-size:.84rem;color:#991b1b}
+    @media(max-width:900px){.admin-sidebar{display:none}}
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="admin-wrap">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo"><strong>Printer Spare Parts</strong><span>Admin Panel</span></div>
+    <nav class="admin-nav">
+      <div class="sec">Main</div>
+      <a href="admindashboard.html">📊 Dashboard</a>
+      <a href="adminorder.html">📦 Orders</a>
+      <a href="adminproduct.html">🛒 Products</a>
+      <div class="sec">Control</div>
+      <a href="admincontrol.html" class="active">🔧 Full Control</a>
+      <a href="adminsetting.html">⚙️ Settings</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="index.html" target="_blank">🌐 View Store</a>
+      <a href="#" onclick="Auth.logout()" style="color:#f87171">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h2>🔧 Admin Full Control Panel</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="exportBackup()">📥 Export Backup</button>
+        <a href="admindashboard.html" class="btn btn-primary btn-sm">← Dashboard</a>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div id="pageAlert"></div>
+
+      <!-- Tab Pills -->
+      <div class="tab-pills">
+        <button class="pill active" onclick="showTab('orders',this)">📦 Orders</button>
+        <button class="pill" onclick="showTab('customers',this)">👥 Customers</button>
+        <button class="pill" onclick="showTab('enquiries',this)">📩 Enquiries</button>
+        <button class="pill" onclick="showTab('danger',this)">⚠️ Danger Zone</button>
+      </div>
+
+      <!-- ══ ORDERS TAB ══ -->
+      <div class="cp active" id="cp-orders">
+        <div class="stat-row" id="orderStats"></div>
+        <div class="toolbar">
+          <input type="text" class="search-input" id="orderSearch" placeholder="Search by order# or customer name..." oninput="filterOrders()"/>
+          <select class="form-control form-select" id="orderStatusFilter" style="width:160px" onchange="filterOrders()">
+            <option value="">All Statuses</option>
+            <option>pending</option><option>confirmed</option><option>processing</option>
+            <option>shipped</option><option>delivered</option><option>cancelled</option>
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll('orders')">🗑️ Delete All Orders</button>
+        </div>
+        <div class="data-table table-wrap">
+          <table>
+            <thead><tr>
+              <th>Order #</th><th>Customer</th><th>Items</th>
+              <th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="ordersBody"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-light)">⏳ Loading...</td></tr></tbody>
+          </table>
+        </div>
+        <div id="ordersPagination" style="display:flex;justify-content:center;gap:6px;margin-top:16px;flex-wrap:wrap"></div>
+      </div>
+
+      <!-- ══ CUSTOMERS TAB ══ -->
+      <div class="cp" id="cp-customers">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="customerSearch" placeholder="Search by name, email, phone..." oninput="filterCustomers()"/>
+        </div>
+        <div class="data-table table-wrap">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Email</th><th>Phone</th>
+              <th>Orders</th><th>Spent</th><th>Joined</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="customersBody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-light)">⏳ Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ ENQUIRIES TAB ══ -->
+      <div class="cp" id="cp-enquiries">
+        <div class="toolbar">
+          <span style="font-size:.88rem;color:var(--text-light)">Customer contact enquiries from your website</span>
+          <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="confirmDeleteAll('enquiries')">🗑️ Clear All</button>
+        </div>
+        <div id="enquiriesList"></div>
+      </div>
+
+      <!-- ══ DANGER ZONE ══ -->
+      <div class="cp" id="cp-danger">
+        <div class="danger-zone">
+          <h3>⚠️ Delete All Orders</h3>
+          <p>This will permanently delete every order, order item and order event from the database. This cannot be undone.</p>
+          <button class="btn btn-danger" onclick="confirmDeleteAll('orders')">🗑️ Delete All Orders</button>
+        </div>
+        <div class="danger-zone">
+          <h3>⚠️ Clear All Enquiries</h3>
+          <p>This will permanently delete all contact form enquiries.</p>
+          <button class="btn btn-danger" onclick="confirmDeleteAll('enquiries')">🗑️ Clear All Enquiries</button>
+        </div>
+        <div class="danger-zone">
+          <h3>⚠️ Clear Search History</h3>
+          <p>This will reset all trending search data. Popular searches will start from zero.</p>
+          <button class="btn btn-danger" onclick="clearSearchLogs()">🗑️ Clear Search History</button>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:var(--card-shadow)">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.95rem;margin-bottom:10px;color:var(--blue-dark)">📥 Export Full Backup</h3>
+          <p style="font-size:.84rem;color:var(--text-light);margin-bottom:14px">Download all orders, customers, and products as a JSON file for backup.</p>
+          <button class="btn btn-primary" onclick="exportBackup()">📥 Download Backup JSON</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ORDER MODAL -->
+<div class="edit-modal-overlay" id="editOrderModal">
+  <div class="edit-modal">
+    <div class="em-header"><h3>✏️ Edit Order</h3><button class="em-close" onclick="closeModal('editOrderModal')">✕</button></div>
+    <div class="em-body">
+      <div id="editOrderAlert"></div>
+      <input type="hidden" id="eoId"/>
+      <div class="form-group"><label class="form-label">Order Number</label><input type="text" id="eoNum" class="form-control" disabled/></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select id="eoStatus" class="form-control form-select">
+            <option>pending</option><option>confirmed</option><option>processing</option>
+            <option>shipped</option><option>delivered</option><option>cancelled</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Payment Status</label>
+          <select id="eoPayStatus" class="form-control form-select">
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tracking Number</label><input type="text" id="eoTracking" class="form-control" placeholder="e.g. DTDC12345"/></div>
+        <div class="form-group"><label class="form-label">Tracking URL</label><input type="text" id="eoTrackUrl" class="form-control" placeholder="https://courier.com/track/..."/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Admin Note (saved in timeline)</label><input type="text" id="eoNote" class="form-control" placeholder="e.g. Customer called — address corrected"/></div>
+    </div>
+    <div class="em-footer">
+      <button class="btn btn-outline" onclick="closeModal('editOrderModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveOrderEdit()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CUSTOMER MODAL -->
+<div class="edit-modal-overlay" id="editCustomerModal">
+  <div class="edit-modal">
+    <div class="em-header"><h3>✏️ Edit Customer</h3><button class="em-close" onclick="closeModal('editCustomerModal')">✕</button></div>
+    <div class="em-body">
+      <div id="editCustomerAlert"></div>
+      <input type="hidden" id="ecId"/>
+      <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="ecName" class="form-control"/></div>
+      <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="ecEmail" class="form-control"/></div>
+      <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" id="ecPhone" class="form-control" maxlength="10"/></div>
+      <div class="form-group">
+        <label class="form-label">Reset Password <span style="font-size:.75rem;color:var(--text-light)">(leave blank to keep current)</span></label>
+        <input type="password" id="ecPass" class="form-control" placeholder="Min 8 characters"/>
+      </div>
+    </div>
+    <div class="em-footer">
+      <button class="btn btn-outline" onclick="closeModal('editCustomerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomerEdit()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="edit-modal-overlay" id="deleteConfirmModal">
+  <div class="edit-modal" style="max-width:400px">
+    <div class="em-header" style="background:var(--red)"><h3>⚠️ Confirm Delete</h3><button class="em-close" onclick="closeModal('deleteConfirmModal')">✕</button></div>
+    <div class="em-body">
+      <div class="confirm-del" id="deleteConfirmMsg"></div>
+      <p style="font-size:.85rem;color:var(--text-light)">This action <strong>cannot be undone</strong>. Are you absolutely sure?</p>
+    </div>
+    <div class="em-footer">
+      <button class="btn btn-outline" onclick="closeModal('deleteConfirmModal')">Cancel</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn" onclick="executeDelete()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAdmin();
+const API = Auth.API_BASE;
+let allOrders=[], allCustomers=[], pendingDelete=null;
+let orderPage=1; const ORDER_LIMIT=15;
+
+// ── Tab switching ─────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.cp').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+  document.getElementById('cp-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id==='orders')    loadOrders();
+  if (id==='customers') loadCustomers();
+  if (id==='enquiries') loadEnquiries();
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.edit-modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); });
+});
+
+function showPageAlert(msg, type='error') {
+  document.getElementById('pageAlert').innerHTML = '<div class="alert alert-'+type+'">'+msg+'</div>';
+  setTimeout(()=>document.getElementById('pageAlert').innerHTML='', 4000);
+}
+
+// ════════════════════════════════════════════════════════════════
+//   ORDERS
+// ════════════════════════════════════════════════════════════════
+async function loadOrders() {
+  try {
+    const token = Auth.getToken();
+    const res   = await Auth.authFetch('/admin/orders?limit=200');
+    const ct    = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) { setTimeout(loadOrders,3000); return; }
+    const data  = await res.json();
+    allOrders   = data.orders || [];
+    // Stats
+    const total   = allOrders.length;
+    const revenue = allOrders.filter(o=>o.payment_status==='paid').reduce((s,o)=>s+o.total,0);
+    const pending = allOrders.filter(o=>o.status==='pending').length;
+    const cancels = allOrders.filter(o=>o.status==='cancelled').length;
+    document.getElementById('orderStats').innerHTML = [
+      stat(total,'Total Orders','📦'),
+      stat('Rs.'+revenue.toLocaleString('en-IN',{maximumFractionDigits:0}),'Revenue','💰'),
+      stat(pending,'Pending','⏳'),
+      stat(cancels,'Cancelled','❌'),
+    ].join('');
+    renderOrders(allOrders);
+  } catch(e) { document.getElementById('ordersBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--red)">Could not load orders. Retrying...</td></tr>'; setTimeout(loadOrders,3000); }
+}
+
+function stat(val,lbl,icon) {
+  return '<div class="stat-mini"><div class="num">'+val+'</div><div class="lbl">'+icon+' '+lbl+'</div></div>';
+}
+
+function filterOrders() {
+  const q   = document.getElementById('orderSearch').value.toLowerCase();
+  const st  = document.getElementById('orderStatusFilter').value;
+  const filtered = allOrders.filter(o => {
+    const matchQ  = !q || o.order_number.toLowerCase().includes(q) || (o.customer_name||'').toLowerCase().includes(q);
+    const matchSt = !st || o.status === st;
+    return matchQ && matchSt;
+  });
+  renderOrders(filtered);
+}
+
+function formatItemsText(order) {
+  if (Array.isArray(order?.item_details) && order.item_details.length) {
+    return order.item_details.map(item => `${item.name} ×${item.qty}`).join('<br>');
+  }
+  return order?.items || '—';
+}
+
+function renderOrders(list) {
+  if (!list.length) {
+    document.getElementById('ordersBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-light)">No orders found</td></tr>';
+    return;
+  }
+  const STATUS_COLORS = { pending:'badge-warning',confirmed:'badge-info',processing:'badge-info',shipped:'badge-info',delivered:'badge-success',cancelled:'badge-danger' };
+  document.getElementById('ordersBody').innerHTML = list.map(o => {
+    const paid = o.payment_status==='paid';
+    return '<tr>'+
+      '<td><strong style="font-size:.82rem">'+o.order_number+'</strong></td>'+
+      '<td style="font-size:.82rem">'+( o.customer_name||'—')+'<br/><span style="font-size:.72rem;color:var(--text-light)">'+(o.customer_phone||'')+'</span></td>'+
+      '<td style="font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:normal">'+formatItemsText(o)+'</td>'+
+      '<td style="font-weight:700;color:var(--red)">Rs.'+parseFloat(o.total||0).toLocaleString('en-IN',{minimumFractionDigits:0})+'</td>'+
+      '<td><span style="font-size:.75rem;font-weight:700;color:'+(paid?'var(--green)':'var(--orange)')+'">'+( paid?'✅ Paid':'⏳ '+(o.payment_method==='cod'?'COD':'Pending'))+'</span></td>'+
+      '<td><span class="badge '+(STATUS_COLORS[o.status]||'badge-grey')+'">'+o.status+'</span></td>'+
+      '<td style="font-size:.78rem;color:var(--text-light)">'+new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+'</td>'+
+      '<td><div class="action-btns">'+
+        '<button class="btn btn-primary btn-sm" onclick="openEditOrder('+JSON.stringify(o).replace(/"/g,"'")+')" title="Edit">✏️</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="confirmDeleteOne(\'order\','+o.id+',\''+o.order_number+'\')" title="Delete">🗑️</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function openEditOrder(o) {
+  document.getElementById('eoId').value       = o.id;
+  document.getElementById('eoNum').value      = o.order_number;
+  document.getElementById('eoStatus').value   = o.status;
+  document.getElementById('eoPayStatus').value= o.payment_status||'pending';
+  document.getElementById('eoTracking').value = o.tracking_number||'';
+  document.getElementById('eoTrackUrl').value = o.tracking_url||'';
+  document.getElementById('eoNote').value     = '';
+  document.getElementById('editOrderAlert').innerHTML='';
+  openModal('editOrderModal');
+}
+
+async function saveOrderEdit() {
+  const id = document.getElementById('eoId').value;
+  const body = {
+    status:          document.getElementById('eoStatus').value,
+    payment_status:  document.getElementById('eoPayStatus').value,
+    tracking_number: document.getElementById('eoTracking').value.trim(),
+    tracking_url:    document.getElementById('eoTrackUrl').value.trim(),
+    note:            document.getElementById('eoNote').value.trim(),
+  };
+  try {
+    const res  = await Auth.authFetch('/admin/orders/'+id, { method:'PUT', body:JSON.stringify(body) });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error||'Save failed');
+    closeModal('editOrderModal');
+    showToast('Order updated successfully', 'success');
+    loadOrders();
+  } catch(e) { document.getElementById('editOrderAlert').innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+
+// ════════════════════════════════════════════════════════════════
+//   CUSTOMERS
+// ════════════════════════════════════════════════════════════════
+async function loadCustomers() {
+  try {
+    const res  = await Auth.authFetch('/admin/users?limit=200');
+    const ct   = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) { setTimeout(loadCustomers,3000); return; }
+    const data = await res.json();
+    allCustomers = data.users || [];
+    renderCustomers(allCustomers);
+  } catch(e) { document.getElementById('customersBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--red)">Could not load customers</td></tr>'; }
+}
+
+function filterCustomers() {
+  const q = document.getElementById('customerSearch').value.toLowerCase();
+  renderCustomers(allCustomers.filter(u =>
+    (u.name||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q) ||
+    (u.phone||'').includes(q)
+  ));
+}
+
+function renderCustomers(list) {
+  if (!list.length) { document.getElementById('customersBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-light)">No customers found</td></tr>'; return; }
+  document.getElementById('customersBody').innerHTML = list.map(u =>
+    '<tr>'+
+    '<td style="font-weight:600;font-size:.85rem">'+u.name+'</td>'+
+    '<td style="font-size:.82rem">'+u.email+'</td>'+
+    '<td style="font-size:.82rem">'+(u.phone||'—')+'</td>'+
+    '<td style="text-align:center"><span class="badge badge-info">'+u.order_count+'</span></td>'+
+    '<td style="font-weight:600;color:var(--green);font-size:.82rem">Rs.'+(u.total_spent||0).toLocaleString('en-IN',{maximumFractionDigits:0})+'</td>'+
+    '<td style="font-size:.78rem;color:var(--text-light)">'+new Date(u.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+'</td>'+
+    '<td><div class="action-btns">'+
+      '<button class="btn btn-primary btn-sm" onclick="openEditCustomer('+JSON.stringify(u).replace(/"/g,"'")+')">✏️ Edit</button>'+
+      '<button class="btn btn-danger btn-sm" onclick="confirmDeleteOne(\'customer\','+u.id+',\''+u.name+'\')">🗑️</button>'+
+    '</div></td>'+
+    '</tr>'
+  ).join('');
+}
+
+function openEditCustomer(u) {
+  document.getElementById('ecId').value    = u.id;
+  document.getElementById('ecName').value  = u.name||'';
+  document.getElementById('ecEmail').value = u.email||'';
+  document.getElementById('ecPhone').value = u.phone||'';
+  document.getElementById('ecPass').value  = '';
+  document.getElementById('editCustomerAlert').innerHTML='';
+  openModal('editCustomerModal');
+}
+
+async function saveCustomerEdit() {
+  const id = document.getElementById('ecId').value;
+  const body = {
+    name:  document.getElementById('ecName').value.trim(),
+    email: document.getElementById('ecEmail').value.trim(),
+    phone: document.getElementById('ecPhone').value.trim(),
+  };
+  const pass = document.getElementById('ecPass').value;
+  if (pass) body.new_password = pass;
+  try {
+    const res  = await Auth.authFetch('/admin/users/'+id, { method:'PUT', body:JSON.stringify(body) });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error||'Save failed');
+    closeModal('editCustomerModal');
+    showToast('Customer updated', 'success');
+    loadCustomers();
+  } catch(e) { document.getElementById('editCustomerAlert').innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+
+// ════════════════════════════════════════════════════════════════
+//   ENQUIRIES
+// ════════════════════════════════════════════════════════════════
+async function loadEnquiries() {
+  try {
+    const res  = await Auth.authFetch('/admin/enquiries');
+    const ct   = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) { document.getElementById('enquiriesList').innerHTML='<p style="color:var(--text-light)">Server loading... please wait.</p>'; setTimeout(loadEnquiries,3000); return; }
+    const list = await res.json();
+    if (!list.length) { document.getElementById('enquiriesList').innerHTML='<div class="empty-state"><div style="font-size:2.5rem">📩</div><h3>No Enquiries Yet</h3></div>'; return; }
+    document.getElementById('enquiriesList').innerHTML = list.map(e =>
+      '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--card-shadow);border-left:4px solid '+(e.is_read?'var(--grey-2)':'var(--teal)')+'">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px">'+
+          '<div>'+
+            '<span style="font-weight:700;font-size:.9rem">'+(e.name||'Unknown')+'</span>'+
+            (!e.is_read ? '<span class="badge badge-info" style="margin-left:8px;font-size:.68rem">NEW</span>' : '')+
+            '<span style="font-size:.75rem;color:var(--text-light);margin-left:10px">'+new Date(e.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'</span>'+
+          '</div>'+
+          '<div style="display:flex;gap:6px">'+
+            (!e.is_read?'<button class="btn btn-outline btn-sm" onclick="markEnquiryRead('+e.id+')">✅ Mark Read</button>':'')+
+            '<button class="btn btn-danger btn-sm" onclick="confirmDeleteOne(\'enquiry\','+e.id+',\'enquiry from '+e.name+'\')">🗑️</button>'+
+          '</div>'+
+        '</div>'+
+        '<div style="font-size:.82rem;color:var(--text-light);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px">'+
+          (e.email?'<span>📧 '+e.email+'</span>':'')+
+          (e.phone?'<span>📱 '+e.phone+'</span>':'')+
+        '</div>'+
+        '<div style="font-size:.88rem;color:var(--text);line-height:1.6;background:var(--grey-1);padding:10px 12px;border-radius:8px">'+e.message+'</div>'+
+        (e.phone?'<div style="margin-top:10px"><a href="https://wa.me/91'+e.phone+'?text=Hi+'+encodeURIComponent(e.name)+',+regarding+your+enquiry..." target="_blank" style="font-size:.8rem;color:#25D366;font-weight:600;text-decoration:none">📱 Reply on WhatsApp</a></div>':'')+
+      '</div>'
+    ).join('');
+  } catch(e) { document.getElementById('enquiriesList').innerHTML='<p style="color:var(--red)">Could not load enquiries.</p>'; }
+}
+
+async function markEnquiryRead(id) {
+  await Auth.authFetch('/admin/enquiries/'+id+'/read', { method:'PUT' });
+  loadEnquiries();
+}
+
+// ════════════════════════════════════════════════════════════════
+//   DELETE HELPERS
+// ════════════════════════════════════════════════════════════════
+function confirmDeleteOne(type, id, label) {
+  pendingDelete = { type, id, label };
+  document.getElementById('deleteConfirmMsg').innerHTML =
+    'You are about to permanently delete: <strong>' + label + '</strong>';
+  openModal('deleteConfirmModal');
+}
+
+function confirmDeleteAll(type) {
+  pendingDelete = { type, id: 'ALL', label: 'ALL ' + type };
+  document.getElementById('deleteConfirmMsg').innerHTML =
+    'You are about to permanently delete <strong>ALL ' + type.toUpperCase() + '</strong>.<br/>This cannot be reversed.';
+  openModal('deleteConfirmModal');
+}
+
+async function executeDelete() {
+  if (!pendingDelete) return;
+  const { type, id, label } = pendingDelete;
+  closeModal('deleteConfirmModal');
+  try {
+    let res;
+    if (type === 'order' && id === 'ALL') {
+      res = await Auth.authFetch('/admin/orders', { method:'DELETE' });
+    } else if (type === 'order') {
+      res = await Auth.authFetch('/admin/orders/'+id, { method:'DELETE' });
+    } else if (type === 'orders') {
+      res = await Auth.authFetch('/admin/orders', { method:'DELETE' });
+    } else if (type === 'customer') {
+      res = await Auth.authFetch('/admin/users/'+id, { method:'DELETE' });
+    } else if (type === 'enquiry') {
+      res = await Auth.authFetch('/admin/enquiries/'+id, { method:'DELETE' });
+    } else if (type === 'enquiries') {
+      // Delete all — call one by one (no bulk delete endpoint needed)
+      const listRes = await Auth.authFetch('/admin/enquiries');
+      const list    = await listRes.json();
+      for (const e of list) { await Auth.authFetch('/admin/enquiries/'+e.id, { method:'DELETE' }); }
+      showToast('All enquiries cleared', 'success');
+      loadEnquiries();
+      return;
+    }
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error||'Delete failed');
+    showToast(data.message||'Deleted successfully', 'success');
+    if (type.includes('order')) loadOrders();
+    else if (type === 'customer') loadCustomers();
+    else if (type === 'enquiry') loadEnquiries();
+  } catch(e) { showPageAlert('Delete failed: '+e.message); }
+  pendingDelete = null;
+}
+
+async function clearSearchLogs() {
+  if (!confirm('Clear all search history and trending data?')) return;
+  try {
+    const res = await Auth.authFetch('/admin/search-logs', { method:'DELETE' });
+    const data = await Auth.safeJson(res);
+    showToast(data.message||'Search history cleared', 'success');
+  } catch(e) { showPageAlert('Failed: '+e.message); }
+}
+
+async function exportBackup() {
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API+'/admin/export', { headers:{ Authorization:'Bearer '+token } });
+    const blob  = await res.blob();
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href = url; a.download = 'ppp-backup-'+Date.now()+'.json'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Backup downloaded!', 'success');
+  } catch(e) { showPageAlert('Export failed: '+e.message); }
+}
+
+// Init — load orders on page load
+loadOrders();
+</script>
+</body>
+</html>
