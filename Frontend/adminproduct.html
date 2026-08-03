@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0"/>
+  <title>Manage Products – Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body{display:flex;min-height:100vh;flex-direction:column}
+    .admin-wrap{display:flex;flex:1}
+    .admin-sidebar{width:260px;background:var(--blue-dark);color:#fff;flex-shrink:0;height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+    .sidebar-logo{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo strong{font-family:'Syne',sans-serif;font-size:1rem;display:block}
+    .sidebar-logo span{font-size:.72rem;opacity:.6}
+    .admin-nav{flex:1;padding:12px 0}
+    .admin-nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,.75);text-decoration:none;font-size:.88rem;transition:.2s}
+    .admin-nav a:hover,.admin-nav a.active{background:rgba(255,255,255,.12);color:#fff}
+    .admin-nav a.active{border-left:3px solid var(--teal)}
+    .admin-nav .sec-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;opacity:.5;padding:16px 20px 6px}
+    .sidebar-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+    .sidebar-bottom a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
+    .admin-main{flex:1;overflow-x:hidden}
+    .admin-topbar{background:#fff;border-bottom:1px solid var(--grey-1);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .admin-topbar h2{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--blue-dark)}
+    .admin-content{padding:28px}
+
+    /* Stats */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .stat-box{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--card-shadow);text-align:center}
+    .stat-val{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--blue-dark)}
+    .stat-lbl{font-size:.75rem;color:var(--text-light);margin-top:2px}
+
+    /* Filters */
+    .filters-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+    .filters-bar input,.filters-bar select{padding:9px 12px;border:1.5px solid var(--grey-2);border-radius:8px;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none}
+    .filters-bar input:focus,.filters-bar select:focus{border-color:var(--teal)}
+
+    /* Product table */
+    .prod-table-wrap{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);overflow:hidden}
+    .prod-table{width:100%;border-collapse:collapse}
+    .prod-table thead tr{background:var(--blue-dark);color:#fff}
+    .prod-table th{padding:13px 16px;font-size:.8rem;font-weight:600;text-align:left;white-space:nowrap}
+    .prod-table td{padding:12px 16px;font-size:.85rem;border-bottom:1px solid var(--grey-1);vertical-align:middle}
+    .prod-table tr:hover td{background:var(--grey-1)}
+    .prod-thumbnail{width:60px;height:60px;border-radius:8px;object-fit:contain;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:.72rem;color:var(--text-light);text-align:center}
+    .prod-thumbnail img{width:100%;height:100%;object-fit:contain}
+    .action-btns{display:flex;gap:6px}
+    .stock-low{color:var(--red);font-weight:600}
+    .stock-ok{color:var(--green);font-weight:600}
+
+    /* Confirm delete */
+    .delete-confirm{background:var(--red);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .delete-confirm:hover{opacity:.85}
+
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .modal-header{background:var(--blue-dark);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:1}
+    .modal-header h3{font-family:'Syne',sans-serif;font-size:1rem}
+    .modal-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer}
+    .modal-body{padding:24px}
+    .modal-footer{padding:16px 24px;border-top:1px solid var(--grey-1);display:flex;gap:10px;justify-content:flex-end}
+
+    /* ── Multi-image upload ─────────────────────── */
+    .img-slot{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--grey-1);border:2px solid var(--grey-2)}
+    .img-slot img{width:100%;height:100%;object-fit:contain}
+    .img-slot .img-remove{position:absolute;top:4px;right:4px;background:rgba(229,62,62,.9);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
+    .img-slot .img-primary-badge{position:absolute;bottom:4px;left:4px;background:var(--teal);color:#fff;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:6px}
+    .img-add-slot{aspect-ratio:1;border-radius:10px;border:2px dashed var(--grey-2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:.75rem;color:var(--text-light);text-align:center;gap:6px;position:relative}
+    .img-add-slot:hover{border-color:var(--teal);background:var(--teal-light)}
+    .img-add-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+    .empty-state{text-align:center;padding:80px 24px;color:var(--text-light)}
+    .empty-state h3{font-size:1.2rem;margin-bottom:8px;color:var(--text)}
+
+    @media(max-width:900px){.admin-sidebar{display:none}.stats-row{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="admin-wrap">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo"><strong>Printer Spare Parts</strong><span>Admin Panel</span></div>
+    <nav class="admin-nav">
+      <div class="sec-lbl">Main</div>
+      <a href="admindashboard.html">Dashboard</a>
+      <a href="adminorder.html">Orders</a>
+      <a href="adminproduct.html" class="active">Products</a>
+      <div class="sec-lbl">Settings</div>
+      <a href="admincontrol.html">🔧 Full Control</a>
+      <a href="adminprofile.html">👤 My Profile</a>
+      <a href="adminsetting.html">Page Content &amp; Settings</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="index.html" target="_blank">View Store</a>
+      <a href="#" onclick="Auth.logout()" style="color:#f87171">Logout</a>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h2>Manage Products</h2>
+      <button class="btn btn-primary btn-sm" onclick="openModal()">+ Add New Product</button>
+    </div>
+
+    <div class="admin-content">
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" id="st-total">0</div><div class="stat-lbl">Total Products</div></div>
+        <div class="stat-box"><div class="stat-val" id="st-active" style="color:var(--green)">0</div><div class="stat-lbl">Active</div></div>
+        <div class="stat-box"><div class="stat-val" id="st-new" style="color:var(--teal)">0</div><div class="stat-lbl">New Arrivals</div></div>
+        <div class="stat-box"><div class="stat-val" id="st-low" style="color:var(--red)">0</div><div class="stat-lbl">Low Stock (under 10)</div></div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <input type="text" id="searchQ" placeholder="Search by name or SKU..." style="flex:1;min-width:200px" oninput="filterList()"/>
+        <select id="catFilter" onchange="filterList()">
+          <option value="">All Categories</option>
+        </select>
+        <select id="statusFilter" onchange="filterList()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="new">New Arrival</option>
+          <option value="bestseller">Best Seller</option>
+          <option value="low">Low Stock</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="prod-table-wrap">
+        <div style="overflow-x:auto">
+          <table class="prod-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Price (Rs.)</th>
+                <th>Old Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody">
+              <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-light)">Loading products...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add New Product</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalAlert"></div>
+      <input type="hidden" id="editId"/>
+
+      <!-- ── Product Images (up to 6) ─────────────────────── -->
+      <div class="form-group">
+        <label class="form-label">
+          Product Images
+          <span style="font-weight:400;color:var(--text-light);font-size:.78rem">&nbsp;(up to 6 — first image is the main one)</span>
+        </label>
+
+        <!-- Preview grid: up to 6 slots + 1 add-slot -->
+        <div id="imgPreviewGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px"></div>
+
+        <!-- Add-image tile (visible when < 6 images) -->
+        <div id="imgAddSlot" class="img-add-slot" style="display:none;max-width:100px">
+          <input type="file" id="imgFileInput" accept="image/*" multiple onchange="handleProductImages(this)"/>
+          <span style="font-size:1.5rem">📷</span>
+          <span>Add</span>
+        </div>
+
+        <div style="font-size:.75rem;color:var(--text-light);margin-top:6px">
+          Max 6 images · Max 5 MB each · JPG, PNG, WEBP
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Product Name *</label>
+        <input type="text" id="pName" class="form-control" placeholder="e.g. 104A Drum Unit For HP Neverstop Laser"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="pDesc" class="form-control" rows="3" placeholder="Describe the product, compatibility, condition..." style="resize:vertical"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">SKU / Part Number</label>
+          <input type="text" id="pSku" class="form-control" placeholder="e.g. W1104A-DRUM"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="pCat" class="form-control form-select">
+            <option value="">Select category</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Selling Price (Rs.) excl. GST *</label>
+          <input type="number" id="pPrice" class="form-control" placeholder="1949" min="0" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Old / MRP Price (Rs.)</label>
+          <input type="number" id="pOldPrice" class="form-control" placeholder="6274" min="0" step="0.01"/>
+          <div class="form-hint">Used to show the discount/savings</div>
+        </div>
+      </div>
+      <div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Stock Quantity *</label>
+    <input type="number" id="pStock" class="form-control" placeholder="50" min="0"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">GST Rate (%) <span style="font-size:.75rem;color:var(--text-light)">(leave blank to use global GST)</span></label>
+    <input type="number" id="pGst" class="form-control" placeholder="e.g. 18" min="0" max="100" step="0.01"/>
+    <div class="form-hint">Global GST is set in Settings. Set here to override for this product only.</div>
+  </div>
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Shipping Charge (Rs.) <span style="font-size:.75rem;color:var(--text-light)">(leave blank to use default)</span></label>
+    <input type="number" id="pShipping" class="form-control" placeholder="e.g. 80" min="0" step="0.01"/>
+    <div class="form-hint">Default shipping is set in Settings. Set here to override for this product only.</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Free Shipping on this product?</label>
+    <select id="pFreeShipping" class="form-control form-select">
+      <option value="no">No — use shipping charge above</option>
+      <option value="yes">Yes — FREE shipping on this product</option>
+    </select>
+  </div>
+</div>
+        <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding-bottom:4px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="pIsNew" style="accent-color:var(--teal);width:16px;height:16px"/> Mark as New Arrival
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="pIsBest" style="accent-color:var(--teal);width:16px;height:16px"/> Mark as Best Seller
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="pIsActive" checked style="accent-color:var(--teal);width:16px;height:16px"/> Active (visible on site)
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header" style="background:var(--red)">
+      <h3>Delete Product</h3>
+      <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.95rem;margin-bottom:12px">Are you sure you want to permanently delete:</p>
+      <p style="font-weight:600;color:var(--red)" id="deleteProductName"></p>
+      <p style="font-size:.85rem;color:var(--text-light);margin-top:8px">This will also delete all product images. This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Yes, Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAdmin();
+
+const API = Auth.API_BASE;
+let allProducts   = [];
+let allCategories = [];
+let deleteTargetId = null;
+
+// ── Multi-image state ─────────────────────────────────────────
+// Each item: { url: string, file: File|null, isExisting: bool }
+let _productImages = [];
+
+function initProductImages(existingImages) {
+  // Revoke any existing object URLs first
+  _productImages.forEach(img => { if (!img.isExisting && img.url) URL.revokeObjectURL(img.url); });
+  _productImages = (existingImages || []).map(url => ({ url, file: null, isExisting: true }));
+  renderImgPreviewGrid();
+}
+
+function handleProductImages(input) {
+  const files     = Array.from(input.files);
+  const remaining = 6 - _productImages.length;
+  if (remaining <= 0) { showToast('Maximum 6 images allowed', 'error'); return; }
+  for (const file of files.slice(0, remaining)) {
+    _productImages.push({ url: URL.createObjectURL(file), file, isExisting: false });
+  }
+  renderImgPreviewGrid();
+  input.value = ''; // reset so the same file can be re-selected
+}
+
+function removeProductImage(index) {
+  const img = _productImages[index];
+  const editId = document.getElementById('editId').value;
+
+  if (img.isExisting && editId) {
+    // Remove from server immediately in edit mode
+    if (!confirm('Remove this image from the product?')) return;
+    Auth.getToken && fetch(API + '/products/' + editId + '/images/' + index, {
+      method:  'DELETE',
+      headers: { Authorization: 'Bearer ' + Auth.getToken() },
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.images) {
+        _productImages = data.images.map(u => ({ url: u, file: null, isExisting: true }));
+      } else {
+        _productImages.splice(index, 1);
+      }
+      renderImgPreviewGrid();
+      showToast('Image removed', 'success');
+    })
+    .catch(() => showToast('Failed to remove image', 'error'));
+    return;
+  }
+
+  // Local (not yet uploaded) — just remove from array
+  if (!img.isExisting) URL.revokeObjectURL(img.url);
+  _productImages.splice(index, 1);
+  renderImgPreviewGrid();
+}
+
+function renderImgPreviewGrid() {
+  const grid    = document.getElementById('imgPreviewGrid');
+  const addSlot = document.getElementById('imgAddSlot');
+  if (!grid) return;
+
+  grid.innerHTML = _productImages.map((img, i) => `
+    <div class="img-slot">
+      <img src="${img.url}" alt="Image ${i + 1}"
+        onerror="this.parentNode.style.background='var(--grey-1)';this.style.display='none'"/>
+      <button class="img-remove" onclick="removeProductImage(${i})" title="Remove image">✕</button>
+      ${i === 0 ? '<div class="img-primary-badge">Main</div>' : ''}
+    </div>
+  `).join('');
+
+  // Show/hide the add-more slot
+  if (addSlot) addSlot.style.display = _productImages.length < 6 ? 'flex' : 'none';
+}
+
+function appendImagesToFormData(formData) {
+  _productImages
+    .filter(img => !img.isExisting && img.file)
+    .forEach(img => formData.append('images', img.file));
+}
+
+// ── Load categories for dropdowns ────────────────────────────
+async function loadCategories() {
+  try {
+    const res = await fetch(API + '/categories');
+    allCategories = await res.json();
+    const opts = allCategories.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+    document.getElementById('catFilter').innerHTML = '<option value="">All Categories</option>' + opts;
+    document.getElementById('pCat').innerHTML      = '<option value="">Select category</option>' + opts;
+  } catch(e) { console.error(e); }
+}
+
+// ── Load products from API ────────────────────────────────────
+async function loadProducts() {
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/products?limit=200', { headers: { Authorization: 'Bearer ' + token } });
+    const data  = await res.json();
+    allProducts = data.products || [];
+    renderTable(allProducts);
+    updateStats();
+  } catch(e) {
+    document.getElementById('productTableBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--red)">Could not load products. Make sure the backend is running.</td></tr>';
+  }
+}
+
+function updateStats() {
+  document.getElementById('st-total').textContent  = allProducts.length;
+  document.getElementById('st-active').textContent = allProducts.filter(p => p.is_active).length;
+  document.getElementById('st-new').textContent    = allProducts.filter(p => p.is_new).length;
+  document.getElementById('st-low').textContent    = allProducts.filter(p => p.stock < 10).length;
+}
+
+function renderTable(list) {
+  if (!list.length) {
+    document.getElementById('productTableBody').innerHTML =
+      '<tr><td colspan="9"><div class="empty-state"><h3>No products yet</h3><p>Click "Add New Product" to add your first product.</p></div></td></tr>';
+    return;
+  }
+  document.getElementById('productTableBody').innerHTML = list.map(p => {
+    const imgHtml = p.image_url
+      ? '<div class="prod-thumbnail"><img src="' + p.image_url + '" alt="" onerror="this.parentNode.innerHTML=\'No img\'"/></div>'
+      : '<div class="prod-thumbnail" style="font-size:.7rem;color:var(--text-light);padding:4px">No Image</div>';
+    const stockClass   = p.stock < 10 ? 'stock-low' : 'stock-ok';
+    const statusBadges = [
+      p.is_active     ? '<span class="badge badge-success">Active</span>'                              : '<span class="badge badge-danger">Inactive</span>',
+      p.is_new        ? '<span class="badge badge-info" style="margin-left:4px">New</span>'            : '',
+      p.is_bestseller ? '<span class="badge badge-warning" style="margin-left:4px">Best</span>'       : '',
+    ].join('');
+    return '<tr>' +
+      '<td>' + imgHtml + '</td>' +
+      '<td style="max-width:220px;font-weight:600">' + p.name + '</td>' +
+      '<td style="color:var(--text-light);font-size:.8rem">' + (p.sku || '-') + '</td>' +
+      '<td style="font-size:.82rem">' + (p.category_name || '-') + '</td>' +
+      '<td style="font-weight:700;color:var(--red)">Rs.' + p.price.toLocaleString('en-IN') + '</td>' +
+      '<td style="color:var(--text-light);text-decoration:line-through;font-size:.82rem">' + (p.old_price ? 'Rs.' + p.old_price.toLocaleString('en-IN') : '-') + '</td>' +
+      '<td class="' + stockClass + '">' + p.stock + '</td>' +
+      '<td>' + statusBadges + '</td>' +
+      '<td>' +
+        '<div class="action-btns">' +
+          '<button class="btn btn-outline btn-sm" onclick="editProduct(' + p.id + ')">Edit</button>' +
+          '<button class="delete-confirm btn-sm" onclick="openDeleteModal(' + p.id + ',\'' + p.name.replace(/'/g, "\\'").substring(0, 50) + '\')">Delete</button>' +
+        '</div>' +
+      '</td></tr>';
+  }).join('');
+}
+
+function filterList() {
+  const q      = document.getElementById('searchQ').value.toLowerCase();
+  const cat    = document.getElementById('catFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  let filtered = allProducts;
+  if (q)      filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q));
+  if (cat)    filtered = filtered.filter(p => p.category_id === parseInt(cat));
+  if (status === 'active')     filtered = filtered.filter(p => p.is_active);
+  if (status === 'inactive')   filtered = filtered.filter(p => !p.is_active);
+  if (status === 'new')        filtered = filtered.filter(p => p.is_new);
+  if (status === 'bestseller') filtered = filtered.filter(p => p.is_bestseller);
+  if (status === 'low')        filtered = filtered.filter(p => p.stock < 10);
+  renderTable(filtered);
+}
+
+// ── Open modal for ADD ────────────────────────────────────────
+function openModal() {
+  document.getElementById('editId').value      = '';
+  document.getElementById('modalTitle').textContent = 'Add New Product';
+  document.getElementById('pName').value       = '';
+  document.getElementById('pDesc').value       = '';
+  document.getElementById('pSku').value        = '';
+  document.getElementById('pCat').value        = '';
+  document.getElementById('pPrice').value      = '';
+  document.getElementById('pOldPrice').value   = '';
+  document.getElementById('pStock').value      = '';
+  document.getElementById('pGst').value         = '';
+  document.getElementById('pShipping').value     = '';
+  document.getElementById('pFreeShipping').value = 'no';
+  document.getElementById('pIsNew').checked    = false;
+  document.getElementById('pIsBest').checked   = false;
+  document.getElementById('pIsActive').checked = true;
+  document.getElementById('modalAlert').innerHTML = '';
+  initProductImages([]);
+  document.getElementById('productModal').classList.add('open');
+}
+
+// ── Open modal for EDIT ───────────────────────────────────────
+function editProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('editId').value      = p.id;
+  document.getElementById('modalTitle').textContent = 'Edit Product';
+  document.getElementById('pName').value       = p.name;
+  document.getElementById('pDesc').value       = p.description || '';
+  document.getElementById('pSku').value        = p.sku || '';
+  document.getElementById('pCat').value        = p.category_id || '';
+  document.getElementById('pPrice').value      = p.price;
+  document.getElementById('pOldPrice').value   = p.old_price || '';
+  document.getElementById('pStock').value      = p.stock;
+  document.getElementById('pGst').value         = p.gst_rate !== null && p.gst_rate !== undefined ? p.gst_rate : '';
+  document.getElementById('pShipping').value     = p.shipping_charge !== null && p.shipping_charge !== undefined ? p.shipping_charge : '';
+  document.getElementById('pFreeShipping').value = p.shipping_charge === 0 ? 'yes' : 'no';
+  document.getElementById('pIsNew').checked    = !!p.is_new;
+  document.getElementById('pIsBest').checked   = !!p.is_bestseller;
+  document.getElementById('pIsActive').checked = !!p.is_active;
+  document.getElementById('modalAlert').innerHTML = '';
+
+  // Build image list from product data
+  // Support both p.images (array) and legacy p.image_url (single string)
+  let existingImages = [];
+  if (Array.isArray(p.images) && p.images.length) {
+    existingImages = p.images;
+  } else if (p.image_url) {
+    existingImages = [p.image_url];
+  }
+  initProductImages(existingImages);
+  document.getElementById('productModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('productModal').classList.remove('open');
+}
+
+// ── Save product (add or edit) ────────────────────────────────
+async function saveProduct() {
+  const id    = document.getElementById('editId').value;
+  const name  = document.getElementById('pName').value.trim();
+  const price = document.getElementById('pPrice').value;
+  if (!name)  { document.getElementById('modalAlert').innerHTML = '<div class="alert alert-error">Product name is required</div>'; return; }
+  if (!price) { document.getElementById('modalAlert').innerHTML = '<div class="alert alert-error">Price is required</div>'; return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.innerHTML = '<span class="spinner"></span> Saving...'; btn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('name',          name);
+    formData.append('description',   document.getElementById('pDesc').value);
+    formData.append('sku',           document.getElementById('pSku').value);
+    formData.append('category_id',   document.getElementById('pCat').value);
+    formData.append('price',         price);
+    formData.append('old_price',     document.getElementById('pOldPrice').value);
+    formData.append('stock',         document.getElementById('pStock').value || 0);
+    formData.append('is_new',        document.getElementById('pIsNew').checked   ? '1' : '0');
+    formData.append('is_bestseller', document.getElementById('pIsBest').checked  ? '1' : '0');
+    formData.append('is_active',     document.getElementById('pIsActive').checked ? '1' : '0');
+
+    // GST rate per product
+const gstVal = document.getElementById('pGst').value;
+if (gstVal !== '') {
+  formData.append('gst_rate', gstVal);
+}
+
+// Shipping charge per product
+const freeShip = document.getElementById('pFreeShipping').value;
+if (freeShip === 'yes') {
+  formData.append('shipping_charge', '0');
+} else {
+  const shipVal = document.getElementById('pShipping').value;
+  if (shipVal !== '') {
+    formData.append('shipping_charge', shipVal);
+  }
+}
+
+    // Append any new (not-yet-uploaded) image files
+    appendImagesToFormData(formData);
+
+    document.getElementById('modalAlert').innerHTML = '<div class="alert alert-info">⏳ Connecting to server...</div>';
+    await Auth.wakeUp();
+
+    const token  = Auth.getToken();
+    const url    = id ? API + '/products/' + id : API + '/products';
+    const method = id ? 'PUT' : 'POST';
+    const res    = await fetch(url, { method, headers: { Authorization: 'Bearer ' + token }, body: formData });
+    const data   = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+
+    showToast(id ? 'Product updated successfully' : 'Product added successfully', 'success');
+    closeModal();
+    await loadProducts();
+  } catch(e) {
+    document.getElementById('modalAlert').innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
+  }
+  btn.innerHTML = 'Save Product'; btn.disabled = false;
+}
+
+// ── Delete product ────────────────────────────────────────────
+function openDeleteModal(id, name) {
+  deleteTargetId = id;
+  document.getElementById('deleteProductName').textContent = name;
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+  deleteTargetId = null;
+}
+
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.innerHTML = 'Deleting...'; btn.disabled = true;
+  try {
+    const token = Auth.getToken();
+    await Auth.wakeUp();
+    const res  = await fetch(API + '/products/' + deleteTargetId, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    showToast('Product deleted permanently', 'success');
+    closeDeleteModal();
+    await loadProducts();
+  } catch(e) { showToast(e.message, 'error'); }
+  btn.innerHTML = 'Yes, Delete Permanently'; btn.disabled = false;
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadCategories();
+loadProducts();
+
+// Render empty image grid on page load so the add slot is visible
+initProductImages([]);
+</script>
+</body>
+</html>

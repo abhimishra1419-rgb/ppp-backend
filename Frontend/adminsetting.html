@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Website Settings – Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body{display:flex;min-height:100vh;flex-direction:column}
+    .admin-wrap{display:flex;flex:1}
+    .admin-sidebar{width:260px;background:var(--blue-dark);color:#fff;flex-shrink:0;height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+    .sidebar-logo{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo strong{font-family:'Syne',sans-serif;font-size:1rem;display:block}
+    .sidebar-logo span{font-size:.72rem;opacity:.6}
+    .admin-nav{flex:1;padding:12px 0}
+    .admin-nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,.75);text-decoration:none;font-size:.88rem;transition:.2s}
+    .admin-nav a:hover,.admin-nav a.active{background:rgba(255,255,255,.12);color:#fff}
+    .admin-nav a.active{border-left:3px solid var(--teal)}
+    .admin-nav .sec-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;opacity:.5;padding:16px 20px 6px}
+    .sidebar-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+    .sidebar-bottom a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
+    .admin-main{flex:1;overflow-x:hidden}
+    .admin-topbar{background:#fff;border-bottom:1px solid var(--grey-1);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:10px}
+    .admin-topbar h2{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--blue-dark)}
+    .admin-content{padding:28px}
+    .settings-layout{display:grid;grid-template-columns:220px 1fr;gap:24px}
+    .settings-nav{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);overflow:hidden;position:sticky;top:80px;height:fit-content}
+    .snav-item{display:flex;align-items:center;gap:10px;padding:13px 18px;font-size:.85rem;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif;transition:.15s;border-left:3px solid transparent;color:var(--text)}
+    .snav-item:hover{background:var(--grey-1)}
+    .snav-item.active{background:var(--teal-light);color:var(--teal);border-left-color:var(--teal);font-weight:600}
+    .settings-panel{display:none}
+    .settings-panel.active{display:block;animation:fadeIn .3s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .scard{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);padding:24px;margin-bottom:20px}
+    .scard h3{font-family:'Syne',sans-serif;font-size:.95rem;margin-bottom:16px;color:var(--blue-dark);padding-bottom:10px;border-bottom:1px solid var(--grey-1)}
+
+    /* Logo upload area */
+    .logo-upload-area{border:2px dashed var(--grey-2);border-radius:14px;padding:28px;text-align:center;cursor:pointer;transition:.2s;position:relative;background:var(--grey-1)}
+    .logo-upload-area:hover{border-color:var(--teal);background:var(--teal-light)}
+    .logo-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .logo-preview-box{margin-top:16px;background:#fff;border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .logo-preview-img{max-height:60px;max-width:200px;object-fit:contain}
+
+    /* Nav link editor */
+    .nav-link-row{display:flex;gap:8px;align-items:center;background:var(--grey-1);border-radius:8px;padding:8px 12px;margin-bottom:8px}
+    .nav-link-row input{flex:1;border:1px solid var(--grey-2);border-radius:6px;padding:6px 10px;font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none}
+    .nav-link-row input:focus{border-color:var(--teal)}
+    .nav-link-drag{cursor:grab;color:var(--text-light);font-size:1.2rem;padding:0 4px;user-select:none}
+    .nav-link-del{background:var(--red);color:#fff;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:.85rem;flex-shrink:0}
+
+    /* Color picker */
+    .color-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .color-swatch{width:40px;height:40px;border-radius:8px;border:2px solid var(--grey-2);overflow:hidden;flex-shrink:0;cursor:pointer}
+    .color-swatch input[type=color]{width:200%;height:200%;margin:-25%;border:none;cursor:pointer;background:none}
+    .color-label{flex:1;font-size:.88rem}
+    .color-hex{width:90px;border:1.5px solid var(--grey-2);border-radius:6px;padding:6px 8px;font-size:.8rem;font-family:monospace;outline:none}
+    .color-hex:focus{border-color:var(--teal)}
+
+    /* Toggle switch */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--grey-1)}
+    .toggle-row:last-child{border-bottom:none}
+    .toggle-info strong{font-size:.88rem;display:block}
+    .toggle-info span{font-size:.75rem;color:var(--text-light)}
+    .toggle-switch{position:relative;width:48px;height:26px;cursor:pointer;flex-shrink:0}
+    .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-slider{position:absolute;inset:0;background:var(--grey-2);border-radius:26px;transition:.3s}
+    .toggle-slider::before{content:'';position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+    .toggle-switch input:checked + .toggle-slider{background:var(--teal)}
+    .toggle-switch input:checked + .toggle-slider::before{transform:translateX(22px)}
+
+    .char-count{font-size:.72rem;color:var(--text-light);text-align:right;margin-top:3px}
+    .preview-box{background:var(--grey-1);border-radius:8px;padding:12px;font-size:.82rem;color:var(--text-light);border-left:3px solid var(--teal);margin-top:8px;line-height:1.5}
+
+    /* Category image grid */
+    .cat-img-card{background:var(--grey-1);border-radius:12px;padding:14px;text-align:center}
+    .cat-img-card .cat-img-preview{height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;background:#fff;border-radius:8px;overflow:hidden;border:1px solid var(--grey-2)}
+    .cat-img-card .cat-img-preview img{max-height:80px;max-width:100%;object-fit:contain}
+    .cat-img-card .cat-img-preview .cat-placeholder{font-size:2rem}
+    .cat-img-card .cat-label{font-size:.82rem;font-weight:600;color:var(--blue-dark);margin-bottom:10px}
+    .cat-img-upload-btn{display:block;width:100%;background:var(--teal);color:#fff;border:none;border-radius:7px;padding:7px 0;font-size:.8rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;margin-bottom:6px;text-align:center}
+    .cat-img-remove-btn{display:block;width:100%;background:var(--red);color:#fff;border:none;border-radius:7px;padding:7px 0;font-size:.8rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;text-align:center}
+
+    @media(max-width:900px){.admin-sidebar{display:none}.settings-layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="admin-wrap">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo"><strong>Printer Spare Parts</strong><span>Admin Panel</span></div>
+    <nav class="admin-nav">
+      <div class="sec-lbl">Main</div>
+      <a href="admindashboard.html">📊 Dashboard</a>
+      <a href="adminorder.html">📦 Orders</a>
+      <a href="adminproduct.html">🛒 Products</a>
+      <div class="sec-lbl">Settings</div>
+      <a href="admincontrol.html">🔧 Full Control</a>
+      <a href="adminprofile.html">👤 My Profile</a>
+      <a href="adminsetting.html" class="active">⚙️ Website Settings</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="index.html" target="_blank">🌐 View Store</a>
+      <a href="#" onclick="Auth.logout()" style="color:#f87171">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h2>⚙️ Website Settings</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">💾 Save All Changes</button>
+        <a href="index.html" target="_blank" class="btn btn-outline btn-sm">👁️ Preview Site</a>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div id="pageAlert"></div>
+      <div class="settings-layout">
+
+        <!-- Left nav -->
+        <div class="settings-nav">
+          <button class="snav-item active" onclick="showPanel('logo',this)">🖼️ Logo &amp; Branding</button>
+          <button class="snav-item" onclick="showPanel('homepage',this)">🏠 Homepage Content</button>
+          <button class="snav-item" onclick="showPanel('navbar',this)">🔗 Navigation Links</button>
+          <button class="snav-item" onclick="showPanel('contact',this)">📞 Contact Info</button>
+          <button class="snav-item" onclick="showPanel('social',this)">📱 Social Media</button>
+          <button class="snav-item" onclick="showPanel('footer',this)">📄 Footer</button>
+          <button class="snav-item" onclick="showPanel('colors',this)">🎨 Colors &amp; Theme</button>
+          <button class="snav-item" onclick="showPanel('shipping',this)">🚚 Shipping &amp; GST</button>
+          <button class="snav-item" onclick="showPanel('visibility',this)">👁️ Show/Hide Sections</button>
+          <button class="snav-item" onclick="showPanel('categories',this)">📁 Categories</button>
+          <button class="snav-item" onclick="showPanel('seo',this)">🔎 SEO</button>
+        </div>
+
+        <!-- Right panels -->
+        <div>
+
+          <!-- LOGO & BRANDING -->
+          <div class="settings-panel active" id="sp-logo">
+            <div class="scard">
+              <h3>🖼️ Website Logo</h3>
+              <div class="logo-upload-area" id="logoUploadArea">
+                <input type="file" id="logoFile" accept="image/*" onchange="previewLogo(this)"/>
+                <div style="font-size:2.5rem;margin-bottom:10px">🖼️</div>
+                <div style="font-size:.9rem;font-weight:600;margin-bottom:4px">Click or drag to upload logo</div>
+                <div style="font-size:.78rem;color:var(--text-light)">PNG, JPG, SVG, WEBP — Max 2MB — Recommended: 200×60px</div>
+              </div>
+              <div id="logoPreviewWrap" style="display:none" class="logo-preview-box">
+                <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Logo preview"/>
+                <div style="flex:1">
+                  <div style="font-size:.82rem;font-weight:600;margin-bottom:4px" id="logoPreviewName">Current Logo</div>
+                  <div style="font-size:.75rem;color:var(--text-light)">This logo appears on all pages</div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-primary btn-sm" onclick="uploadLogo()">Upload</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteLogo()">Remove</button>
+                </div>
+              </div>
+              <div style="background:var(--grey-1);border-radius:8px;padding:12px;margin-top:12px;font-size:.8rem;color:var(--text-light)">
+                💡 <strong>Tip:</strong> Use a PNG with transparent background for best results. The logo will appear on the header of every page automatically.
+              </div>
+            </div>
+
+            <div class="scard">
+              <h3>🏪 Store Name &amp; Tagline</h3>
+              <div class="form-group">
+                <label class="form-label">Store Name <span style="color:var(--text-light);font-size:.75rem">(shown in browser tab and footer)</span></label>
+                <input type="text" id="site_name" class="form-control" placeholder="PrintersReports"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tagline <span style="color:var(--text-light);font-size:.75rem">(shown below logo when no logo image is set)</span></label>
+                <input type="text" id="tagline" class="form-control" placeholder="India's #1 Printer Reports Store"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- HOMEPAGE CONTENT -->
+          <div class="settings-panel" id="sp-homepage">
+            <div class="scard">
+              <h3>🏠 Hero Banner (Main Banner on Homepage)</h3>
+              <div class="form-group">
+                <label class="form-label">Main Heading</label>
+                <textarea id="hero_title" class="form-control" rows="2" oninput="countChars(this,'ht-cnt')" placeholder="India's #1 Source for Printer Reports"></textarea>
+                <div class="char-count" id="ht-cnt">0 chars</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Subtitle / Description</label>
+                <textarea id="hero_subtitle" class="form-control" rows="2" oninput="countChars(this,'hs-cnt')" placeholder="Genuine parts for HP, Canon, Epson..."></textarea>
+                <div class="char-count" id="hs-cnt">0 chars</div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Primary Button Text</label>
+                  <input type="text" id="hero_btn_primary" class="form-control" placeholder="Shop Now"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Secondary Button Text</label>
+                  <input type="text" id="hero_btn_secondary" class="form-control" placeholder="New Arrivals"/>
+                </div>
+              </div>
+            </div>
+            <div class="scard">
+              <h3>📢 Announcement Bar <span style="font-weight:400;font-size:.8rem;color:var(--text-light)">(Top dark strip on every page)</span></h3>
+              <div class="form-group">
+                <label class="form-label">Announcement Text</label>
+                <input type="text" id="announcement_bar" class="form-control" placeholder="Free Shipping on orders above Rs.999 | All Prices Exclusive of 18% GST"/>
+              </div>
+            </div>
+            <div class="scard">
+              <h3>📱 WhatsApp Banner <span style="font-weight:400;font-size:.8rem;color:var(--text-light)">(Green strip below header)</span></h3>
+              <div class="form-group">
+                <label class="form-label">WhatsApp Banner Text</label>
+                <input type="text" id="whatsapp_banner_text" class="form-control" placeholder="For any queries contact us on WhatsApp"/>
+                <div class="form-hint">The WhatsApp number is set in Contact Info section</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NAVIGATION LINKS -->
+          <div class="settings-panel" id="sp-navbar">
+            <div class="scard">
+              <h3>🔗 Navigation Menu Links</h3>
+              <p style="font-size:.82rem;color:var(--text-light);margin-bottom:16px">Add, remove or rename links in the top navigation menu. Changes appear on every page.</p>
+              <div id="navLinksEditor"></div>
+              <button class="btn btn-outline btn-sm" onclick="addNavLink()" style="margin-top:8px">+ Add Link</button>
+              <div class="preview-box" style="margin-top:16px">
+                <strong>Preview:</strong> <span id="navPreview" style="font-size:.78rem"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTACT INFO -->
+          <div class="settings-panel" id="sp-contact">
+            <div class="scard">
+              <h3>📞 Contact Details <span style="font-weight:400;font-size:.8rem;color:var(--text-light)">(shown on contact page &amp; footer)</span></h3>
+              <div class="form-group">
+                <label class="form-label">WhatsApp Number <span style="color:var(--red)">*</span></label>
+                <input type="tel" id="whatsapp_number" class="form-control" placeholder="Enter 10-digit WhatsApp number" maxlength="10"/>
+                <div class="form-hint">This number appears everywhere — header, footer, WhatsApp buttons. Do NOT include +91.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="footer_email" class="form-control" placeholder=""/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Business Address</label>
+                <textarea id="footer_address" class="form-control" rows="2" placeholder=""></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Working Hours</label>
+                <input type="text" id="working_hours" class="form-control" placeholder="Mon–Sat: 10:00 AM – 7:00 PM"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- SOCIAL MEDIA -->
+          <div class="settings-panel" id="sp-social">
+            <div class="scard">
+              <h3>📱 Social Media Links <span style="font-weight:400;font-size:.8rem;color:var(--text-light)">(shown in footer)</span></h3>
+              <div class="form-group">
+                <label class="form-label">💬 WhatsApp Link</label>
+                <input type="url" id="social_whatsapp" class="form-control" placeholder="https://wa.me/91XXXXXXXXXX"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">📘 Facebook Page URL</label>
+                <input type="url" id="social_facebook" class="form-control" placeholder="https://facebook.com/yourpage"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">📸 Instagram Profile URL</label>
+                <input type="url" id="social_instagram" class="form-control" placeholder="https://instagram.com/yourprofile"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">📺 YouTube Channel URL</label>
+                <input type="url" id="social_youtube" class="form-control" placeholder="https://youtube.com/@yourchannel"/>
+              </div>
+              <div class="preview-box">Leave blank to hide that social icon from the footer.</div>
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div class="settings-panel" id="sp-footer">
+            <div class="scard">
+              <h3>📄 Footer Content</h3>
+              <div class="form-group">
+                <label class="form-label">Footer Tagline <span style="color:var(--text-light);font-size:.75rem">(text below store name in footer)</span></label>
+                <textarea id="footer_tagline" class="form-control" rows="2" placeholder="Your trusted source for genuine printer reports across India."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Copyright Text <span style="color:var(--text-light);font-size:.75rem">(bottom of footer)</span></label>
+                <input type="text" id="footer_copyright" class="form-control" placeholder="2025 PrintersReports. All rights reserved."/>
+                <div class="form-hint">Tip: start with the year e.g. 2025 YourBrandName</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLORS & THEME -->
+          <div class="settings-panel" id="sp-colors">
+            <div class="scard">
+              <h3>🎨 Website Colors</h3>
+              <p style="font-size:.82rem;color:var(--text-light);margin-bottom:20px">Change these to match your brand. Colors apply to header, buttons, and accents on every page.</p>
+              <div class="color-row">
+                <div class="color-swatch"><input type="color" id="color_primary" oninput="syncHex(this,'hex_primary');livePreviewColor()"/></div>
+                <div class="color-label"><strong>Primary Color</strong><br/><span style="font-size:.75rem;color:var(--text-light)">Header background, main dark color</span></div>
+                <input type="text" class="color-hex" id="hex_primary" placeholder="#0d2c6b" oninput="syncColor(this,'color_primary');livePreviewColor()"/>
+              </div>
+              <div class="color-row">
+                <div class="color-swatch"><input type="color" id="color_secondary" oninput="syncHex(this,'hex_secondary');livePreviewColor()"/></div>
+                <div class="color-label"><strong>Secondary Color</strong><br/><span style="font-size:.75rem;color:var(--text-light)">Navigation bar, secondary elements</span></div>
+                <input type="text" class="color-hex" id="hex_secondary" placeholder="#1a4298" oninput="syncColor(this,'color_secondary');livePreviewColor()"/>
+              </div>
+              <div class="color-row">
+                <div class="color-swatch"><input type="color" id="color_accent" oninput="syncHex(this,'hex_accent');livePreviewColor()"/></div>
+                <div class="color-label"><strong>Accent Color</strong><br/><span style="font-size:.75rem;color:var(--text-light)">Buttons, links, highlights, WhatsApp banner</span></div>
+                <input type="text" class="color-hex" id="hex_accent" placeholder="#00b5d8" oninput="syncColor(this,'color_accent');livePreviewColor()"/>
+              </div>
+              <div id="colorPreview" style="margin-top:16px;border-radius:10px;overflow:hidden;box-shadow:var(--card-shadow)">
+                <div id="cp-header" style="padding:12px 16px;display:flex;align-items:center;gap:10px">
+                  <div style="font-size:.9rem;font-weight:700;color:#fff">PrintersReports</div>
+                  <div style="margin-left:auto;display:flex;gap:8px">
+                    <div id="cp-btn" style="padding:5px 14px;border-radius:6px;font-size:.75rem;color:#fff;font-weight:600">Shop Now</div>
+                  </div>
+                </div>
+                <div id="cp-nav" style="padding:8px 16px">
+                  <span style="font-size:.75rem;color:rgba(255,255,255,.8)">Home &nbsp; Products &nbsp; Contact</span>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="resetColors()">↺ Reset to Default Colors</button>
+            </div>
+          </div>
+
+          <!-- SHIPPING & GST -->
+          <div class="settings-panel" id="sp-shipping">
+            <div class="scard">
+              <h3>🚚 Shipping Charges</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Default Shipping Charge (Rs.)</label>
+                  <input type="number" id="default_shipping_charge" class="form-control" placeholder="80" min="0"/>
+                  <div class="form-hint">This charge applies when no product-specific shipping is set</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Free Shipping on Orders Above (Rs.)</label>
+                  <input type="number" id="free_shipping_min" class="form-control" placeholder="999" min="0"/>
+                  <div class="form-hint">Set to 0 to always charge shipping. Set very high to never give free shipping.</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Shipping Message (shown on website)</label>
+                <input type="text" id="shipping_message" class="form-control" placeholder="Free shipping on orders above Rs.999"/>
+                <div class="form-hint">This text appears in the announcement bar and cart page</div>
+              </div>
+              <div class="preview-box" id="shippingPreview">
+                Default shipping: Rs.<span id="prev-default-ship">80</span> per order.<br/>
+                Free shipping on orders above Rs.<span id="prev-ship">999</span>.<br/>
+                GST @<span id="prev-gst">18</span>% added at checkout.
+              </div>
+              <div style="background:#e8f9f0;border:1px solid #a3d9b8;border-radius:8px;padding:12px;margin-top:12px;font-size:.82rem;color:#065f46">
+                💡 <strong>Per-product shipping:</strong> You can set individual shipping charges for each product in the Products section. Per-product charge overrides this default.
+              </div>
+            </div>
+            <div class="scard">
+              <h3>🧾 GST Settings</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">GST Rate (%)</label>
+                  <input type="number" id="gst_rate" class="form-control" placeholder="18" min="0" max="100"/>
+                  <div class="form-hint">Applied on all product prices at checkout</div>
+                </div>
+                <div class="form-group" style="display:flex;align-items:flex-end">
+                  <div style="background:var(--grey-1);border-radius:8px;padding:12px;font-size:.82rem;width:100%;color:var(--text-light)">
+                    Current GST: <strong style="color:var(--text)" id="gstPreviewText">18%</strong><br/>
+                    On a Rs.500 product:<br/>
+                    GST = Rs.<span id="gstExampleAmt">90</span><br/>
+                    Total = Rs.<span id="gstExampleTotal">590</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISIBILITY -->
+          <div class="settings-panel" id="sp-visibility">
+            <div class="scard">
+              <h3>👁️ Show or Hide Sections on Homepage</h3>
+              <div class="toggle-row">
+                <div class="toggle-info"><strong>Categories Section</strong><span>Grid of product categories on homepage</span></div>
+                <label class="toggle-switch"><input type="checkbox" id="show_categories"/><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-info"><strong>New Arrivals Section</strong><span>Products marked as New Arrival</span></div>
+                <label class="toggle-switch"><input type="checkbox" id="show_new_arrivals"/><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-info"><strong>Best Sellers Section</strong><span>Products marked as Best Seller</span></div>
+                <label class="toggle-switch"><input type="checkbox" id="show_best_sellers"/><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- CATEGORIES -->
+          <div class="settings-panel" id="sp-categories">
+
+            <!-- Add / manage categories -->
+            <div class="scard">
+              <h3>📁 Product Categories</h3>
+              <div id="catList" style="margin-bottom:16px"></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                <div class="form-group" style="margin:0;flex:1;min-width:140px">
+                  <label class="form-label">Category Name</label>
+                  <input type="text" id="newCatName" class="form-control" placeholder="e.g. Laser Printer Parts"/>
+                </div>
+                <div class="form-group" style="margin:0;flex:1;min-width:100px">
+                  <label class="form-label">URL Slug</label>
+                  <input type="text" id="newCatSlug" class="form-control" placeholder="e.g. laser"/>
+                </div>
+                <button class="btn btn-primary" onclick="addCategory()" style="margin-bottom:0;white-space:nowrap">+ Add Category</button>
+              </div>
+            </div>
+
+            <!-- ── Category Images ──────────────────────────────── -->
+            <div class="scard">
+              <h3>🖼️ Category Images
+                <span style="font-size:.75rem;font-weight:400;color:var(--text-light);margin-left:8px">
+                  Shown in the Top Categories section on homepage
+                </span>
+              </h3>
+              <p style="font-size:.82rem;color:var(--text-light);margin-bottom:16px">
+                Upload a thumbnail image for each category. Recommended size: 200×160px, transparent PNG.
+              </p>
+              <div id="catImgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
+                <div style="color:var(--text-light);font-size:.85rem;padding:12px 0">Loading categories...</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- SEO -->
+          <div class="settings-panel" id="sp-seo">
+            <div class="scard">
+              <h3>🔎 SEO Settings</h3>
+              <div class="form-group">
+                <label class="form-label">Page Title (shown in browser tab)</label>
+                <input type="text" id="meta_title" class="form-control" oninput="countChars(this,'mt-cnt')" placeholder="PrintersReports – Printer Reports India"/>
+                <div class="char-count" id="mt-cnt">0 / 60 chars recommended</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Meta Description (shown in Google search results)</label>
+                <textarea id="meta_description" class="form-control" rows="3" oninput="countChars(this,'md-cnt')" placeholder="Buy genuine printer reports online in India..."></textarea>
+                <div class="char-count" id="md-cnt">0 / 160 chars recommended</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end right column -->
+      </div><!-- end settings-layout -->
+    </div><!-- end admin-content -->
+  </div><!-- end admin-main -->
+</div><!-- end admin-wrap -->
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAdmin();
+const API = Auth.API_BASE;
+
+// ── Panel navigation ──────────────────────────────────────────
+function showPanel(id, btn) {
+  document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sp-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  // Reload category images when switching to categories panel
+  if (id === 'categories') loadCategoryImages();
+}
+
+function countChars(el, id) {
+  document.getElementById(id).textContent = el.value.length + ' chars';
+}
+
+// ── Color helpers ─────────────────────────────────────────────
+function syncHex(colorInput, hexId) {
+  document.getElementById(hexId).value = colorInput.value;
+}
+function syncColor(hexInput, colorId) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(hexInput.value)) {
+    document.getElementById(colorId).value = hexInput.value;
+  }
+}
+function livePreviewColor() {
+  const pri = document.getElementById('color_primary').value   || '#0d2c6b';
+  const sec = document.getElementById('color_secondary').value || '#1a4298';
+  const acc = document.getElementById('color_accent').value    || '#00b5d8';
+  document.getElementById('cp-header').style.background = pri;
+  document.getElementById('cp-nav').style.background    = sec;
+  document.getElementById('cp-btn').style.background    = acc;
+}
+function resetColors() {
+  const defs = { color_primary:'#0d2c6b', color_secondary:'#1a4298', color_accent:'#00b5d8' };
+  Object.entries(defs).forEach(([k, v]) => {
+    const el  = document.getElementById(k);           if (el)  el.value  = v;
+    const hex = document.getElementById('hex_' + k.replace('color_', '')); if (hex) hex.value = v;
+  });
+  livePreviewColor();
+}
+
+// ── Nav links editor ──────────────────────────────────────────
+let navLinks = [];
+function renderNavEditor() {
+  document.getElementById('navLinksEditor').innerHTML = navLinks.map((n, i) =>
+    '<div class="nav-link-row" id="nl-' + i + '">' +
+    '<span class="nav-link-drag" title="Drag to reorder">⠿</span>' +
+    '<input type="text" placeholder="Icon (optional)" value="' + (n.icon || '') + '" style="max-width:60px" oninput="navLinks[' + i + '].icon=this.value;updateNavPreview()"/>' +
+    '<input type="text" placeholder="Link name e.g. Home" value="' + (n.label || '') + '" oninput="navLinks[' + i + '].label=this.value;updateNavPreview()"/>' +
+    '<input type="text" placeholder="URL e.g. index.html" value="' + (n.url || '') + '" oninput="navLinks[' + i + '].url=this.value"/>' +
+    '<button class="nav-link-del" onclick="removeNavLink(' + i + ')" title="Remove">✕</button>' +
+    '</div>'
+  ).join('');
+  updateNavPreview();
+}
+function addNavLink() {
+  navLinks.push({ label: 'New Link', url: 'index.html', icon: '' });
+  renderNavEditor();
+}
+function removeNavLink(i) {
+  navLinks.splice(i, 1);
+  renderNavEditor();
+}
+function updateNavPreview() {
+  document.getElementById('navPreview').textContent = navLinks.map(n => (n.icon ? n.icon + ' ' : '') + n.label).join(' | ');
+}
+
+// ── Logo functions ────────────────────────────────────────────
+function previewLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('logoPreviewImg').src = e.target.result;
+    document.getElementById('logoPreviewName').textContent = file.name;
+    document.getElementById('logoPreviewWrap').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadLogo() {
+  const file = document.getElementById('logoFile').files[0];
+  if (!file) { showToast('Please select a logo file first', 'error'); return; }
+  const formData = new FormData();
+  formData.append('logo', file);
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/settings/logo', {
+      method:  'POST',
+      headers: { Authorization: 'Bearer ' + token },
+      body:    formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    clearSettingsCache();
+    showToast('✅ Logo uploaded! It now appears on every page.', 'success');
+    document.getElementById('logoPreviewImg').src = data.logo_url + '?t=' + Date.now();
+    document.getElementById('logoPreviewName').textContent = 'Active logo';
+  } catch(e) { showToast('Upload failed: ' + e.message, 'error'); }
+}
+
+async function deleteLogo() {
+  if (!confirm('Remove the logo? The store name text will be shown instead.')) return;
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/settings/logo', { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('Delete failed');
+    clearSettingsCache();
+    document.getElementById('logoPreviewWrap').style.display = 'none';
+    document.getElementById('logoFile').value = '';
+    showToast('Logo removed. Store name text is now shown.', 'success');
+  } catch(e) { showToast('Remove failed: ' + e.message, 'error'); }
+}
+
+// Drag drop on logo area
+const logoArea = document.getElementById('logoUploadArea');
+logoArea.addEventListener('dragover',  e => { e.preventDefault(); logoArea.style.borderColor = 'var(--teal)'; });
+logoArea.addEventListener('dragleave', () => logoArea.style.borderColor = '');
+logoArea.addEventListener('drop', e => {
+  e.preventDefault(); logoArea.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    document.getElementById('logoFile').files = dt.files;
+    previewLogo(document.getElementById('logoFile'));
+  }
+});
+
+// ── Load settings from API ────────────────────────────────────
+async function loadSettings() {
+  document.getElementById('pageAlert').innerHTML = '<div class="alert alert-info">⏳ Loading settings...</div>';
+  let attempts = 0;
+  while (attempts < 15) {
+    attempts++;
+    try {
+      const res = await fetch(API + '/settings', { cache: 'no-store' });
+      const ct  = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) throw new Error('not ready');
+      const s   = await res.json();
+      document.getElementById('pageAlert').innerHTML = '';
+
+      const textFields = [
+        'site_name','tagline','hero_title','hero_subtitle','hero_btn_primary','hero_btn_secondary',
+        'announcement_bar','whatsapp_banner_text','whatsapp_number','footer_email','footer_address',
+        'working_hours','footer_tagline','footer_copyright',
+        'social_whatsapp','social_facebook','social_instagram','social_youtube',
+        'free_shipping_min','default_shipping_charge','shipping_message','gst_rate','meta_title','meta_description',
+      ];
+      textFields.forEach(f => { const el = document.getElementById(f); if (el && s[f] !== undefined) el.value = s[f]; });
+
+      ['show_categories','show_new_arrivals','show_best_sellers'].forEach(f => {
+        const el = document.getElementById(f); if (el) el.checked = !!s[f];
+      });
+
+      if (s.color_primary)   { document.getElementById('color_primary').value   = s.color_primary;   document.getElementById('hex_primary').value   = s.color_primary; }
+      if (s.color_secondary) { document.getElementById('color_secondary').value = s.color_secondary; document.getElementById('hex_secondary').value = s.color_secondary; }
+      if (s.color_accent)    { document.getElementById('color_accent').value    = s.color_accent;    document.getElementById('hex_accent').value    = s.color_accent; }
+      livePreviewColor();
+
+      if (s.logo_url) {
+        const base = API.replace('/api', '');
+        const src  = s.logo_url.startsWith('http') ? s.logo_url : base + s.logo_url;
+        document.getElementById('logoPreviewImg').src = src + '?t=' + Date.now();
+        document.getElementById('logoPreviewName').textContent = 'Active logo';
+        document.getElementById('logoPreviewWrap').style.display = 'flex';
+      }
+
+      try { navLinks = JSON.parse(s.nav_links || '[]'); } catch(e) { navLinks = []; }
+      renderNavEditor();
+
+      document.getElementById('prev-gst').textContent          = s.gst_rate || 18;
+      document.getElementById('prev-ship').textContent         = s.free_shipping_min || 999;
+      document.getElementById('prev-default-ship').textContent = s.default_shipping_charge !== undefined ? s.default_shipping_charge : 80;
+      updateGstPreview(s.gst_rate || 18);
+
+      ['hero_title','hero_subtitle','meta_title','meta_description'].forEach(f => {
+        const el  = document.getElementById(f);
+        const cid = { hero_title:'ht-cnt', hero_subtitle:'hs-cnt', meta_title:'mt-cnt', meta_description:'md-cnt' }[f];
+        if (el && cid) countChars(el, cid);
+      });
+      return;
+    } catch(e) {
+      document.getElementById('pageAlert').innerHTML =
+        '<div class="alert alert-info">⏳ Connecting to server' + (attempts > 1 ? ' (' + attempts * 3 + 's)' : '') + '...</div>';
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  document.getElementById('pageAlert').innerHTML =
+    '<div class="alert alert-error">Could not load settings. <a href="javascript:location.reload()">Refresh</a></div>';
+}
+
+// ── Save all settings ─────────────────────────────────────────
+async function saveAllSettings() {
+  document.getElementById('pageAlert').innerHTML = '<div class="alert alert-info">⏳ Saving...</div>';
+  const textFields = [
+    'site_name','tagline','hero_title','hero_subtitle','hero_btn_primary','hero_btn_secondary',
+    'announcement_bar','whatsapp_banner_text','whatsapp_number','footer_email','footer_address',
+    'working_hours','footer_tagline','footer_copyright',
+    'social_whatsapp','social_facebook','social_instagram','social_youtube',
+    'free_shipping_min','gst_rate','meta_title','meta_description',
+  ];
+  const payload = {};
+  textFields.forEach(f => { const el = document.getElementById(f); if (el) payload[f] = el.value; });
+  ['show_categories','show_new_arrivals','show_best_sellers'].forEach(f => {
+    const el = document.getElementById(f); if (el) payload[f] = el.checked;
+  });
+  payload.color_primary   = document.getElementById('color_primary').value   || '#0d2c6b';
+  payload.color_secondary = document.getElementById('color_secondary').value || '#1a4298';
+  payload.color_accent    = document.getElementById('color_accent').value    || '#00b5d8';
+  payload.gst_rate                = parseFloat(payload.gst_rate)                || 18;
+  payload.free_shipping_min       = parseFloat(payload.free_shipping_min)       || 999;
+  payload.default_shipping_charge = payload.default_shipping_charge !== '' ? parseFloat(payload.default_shipping_charge) : 80;
+  payload.nav_links = JSON.stringify(navLinks);
+  try {
+    const token = Auth.getToken();
+    await Auth.wakeUp();
+    const res  = await fetch(API + '/settings', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body:    JSON.stringify(payload),
+    });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+    clearSettingsCache();
+    document.getElementById('prev-gst').textContent          = payload.gst_rate;
+    document.getElementById('prev-ship').textContent         = payload.free_shipping_min;
+    document.getElementById('prev-default-ship').textContent = payload.default_shipping_charge;
+    updateGstPreview(payload.gst_rate);
+    document.getElementById('pageAlert').innerHTML = '';
+    showToast('✅ All settings saved! Changes are live on the website.', 'success');
+  } catch(e) {
+    document.getElementById('pageAlert').innerHTML = '<div class="alert alert-error">Save failed: ' + e.message + '</div>';
+  }
+}
+
+// ── Categories (add / delete) ─────────────────────────────────
+async function loadCategories() {
+  try {
+    const res = await fetch(API + '/categories');
+    const ct  = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return;
+    const cats = await res.json();
+    document.getElementById('catList').innerHTML = cats.length
+      ? cats.map(c =>
+          '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--grey-1)">' +
+          '<span style="flex:1;font-size:.88rem;font-weight:600">' + c.name + '</span>' +
+          '<span class="badge badge-grey" style="font-size:.72rem">' + c.slug + '</span>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteCategory(' + c.id + ',\'' + c.name + '\')">Delete</button>' +
+          '</div>'
+        ).join('')
+      : '<div style="color:var(--text-light);font-size:.85rem;padding:12px 0">No categories yet</div>';
+  } catch(e) {}
+}
+
+async function addCategory() {
+  const name = document.getElementById('newCatName').value.trim();
+  const slug = document.getElementById('newCatSlug').value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (!name || !slug) { showToast('Please enter both name and slug', 'error'); return; }
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/categories', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body:    JSON.stringify({ name, slug }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showToast('Category added', 'success');
+    document.getElementById('newCatName').value = '';
+    document.getElementById('newCatSlug').value = '';
+    loadCategories();
+    loadCategoryImages(); // refresh image grid too
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteCategory(id, name) {
+  if (!confirm('Delete category "' + name + '"?')) return;
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/categories/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    const data  = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showToast('Category deleted', 'success');
+    loadCategories();
+    loadCategoryImages(); // refresh image grid too
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Category Images ───────────────────────────────────────────
+const CAT_ICONS_ADMIN = {
+  laser:'🖨️', inkjet:'💧', toner:'🖤', thermal:'🧾',
+  dmp:'🖨️', scanner:'📠', complete:'🖨️', drum:'⚙️',
+};
+
+async function loadCategoryImages() {
+  const grid = document.getElementById('catImgGrid');
+  if (!grid) return;
+  try {
+    const res  = await fetch(API + '/categories');
+    const ct   = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return;
+    const cats = await res.json();
+    if (!cats.length) { grid.innerHTML = '<p style="color:var(--text-light);font-size:.85rem">No categories yet. Add one above first.</p>'; return; }
+
+    grid.innerHTML = cats.map(c => `
+      <div class="cat-img-card">
+        <div class="cat-img-preview">
+          ${c.image_url
+            ? `<img id="catImg_${c.id}" src="${c.image_url}?t=${Date.now()}" alt="${c.name}"/>`
+            : `<span id="catImg_${c.id}" class="cat-placeholder">${CAT_ICONS_ADMIN[c.slug] || '🖨️'}</span>`}
+        </div>
+        <div class="cat-label">${c.name}</div>
+        <label style="cursor:pointer;display:block">
+          <input type="file" accept="image/*" style="display:none" onchange="uploadCatImage(${c.id}, this)"/>
+          <span class="cat-img-upload-btn">${c.image_url ? '🔄 Change Image' : '📷 Upload Image'}</span>
+        </label>
+        ${c.image_url ? `<button class="cat-img-remove-btn" onclick="removeCatImage(${c.id})">🗑 Remove</button>` : ''}
+      </div>
+    `).join('');
+  } catch(e) { grid.innerHTML = '<p style="color:var(--text-light)">Could not load categories.</p>'; }
+}
+
+async function uploadCatImage(catId, input) {
+  if (!input.files[0]) return;
+  const formData = new FormData();
+  formData.append('image', input.files[0]);
+  try {
+    showToast('Uploading image...', 'info');
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/categories/' + catId + '/image', {
+      method:  'POST',
+      headers: { Authorization: 'Bearer ' + token },
+      body:    formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    showToast('✅ Category image uploaded!', 'success');
+    loadCategoryImages();
+  } catch(e) { showToast('Upload failed: ' + e.message, 'error'); }
+}
+
+async function removeCatImage(catId) {
+  if (!confirm('Remove this category image?')) return;
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch(API + '/categories/' + catId + '/image', {
+      method:  'DELETE',
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    showToast('Image removed', 'success');
+    loadCategoryImages();
+  } catch(e) { showToast('Remove failed: ' + e.message, 'error'); }
+}
+
+// ── Auto-generate slug from category name ─────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('newCatName').addEventListener('input', function() {
+    document.getElementById('newCatSlug').value =
+      this.value.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  });
+  document.getElementById('gst_rate').addEventListener('input', function() {
+    document.getElementById('prev-gst').textContent = this.value || 18;
+  });
+  document.getElementById('free_shipping_min').addEventListener('input', function() {
+    document.getElementById('prev-ship').textContent = this.value || 999;
+  });
+});
+
+// ── GST example calculator ────────────────────────────────────
+function updateGstPreview(rate) {
+  rate = parseFloat(rate) || 18;
+  const gstAmt   = Math.round(500 * rate / 100);
+  const totalAmt = 500 + gstAmt;
+  const el = document.getElementById('gstPreviewText');
+  const ea = document.getElementById('gstExampleAmt');
+  const et = document.getElementById('gstExampleTotal');
+  if (el) el.textContent = rate + '%';
+  if (ea) ea.textContent = gstAmt;
+  if (et) et.textContent = totalAmt;
+  const pg = document.getElementById('prev-gst'); if (pg) pg.textContent = rate;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const gstInput  = document.getElementById('gst_rate');
+  const shipInput = document.getElementById('free_shipping_min');
+  const defInput  = document.getElementById('default_shipping_charge');
+  if (gstInput)  gstInput.addEventListener('input',  function() { updateGstPreview(this.value); });
+  if (shipInput) shipInput.addEventListener('input',  function() { const ps = document.getElementById('prev-ship');         if (ps) ps.textContent = this.value || 999; });
+  if (defInput)  defInput.addEventListener('input',   function() { const pd = document.getElementById('prev-default-ship'); if (pd) pd.textContent = this.value || 80; });
+});
+
+// Init
+loadSettings();
+loadCategories();
+loadCategoryImages();
+</script>
+</body>
+</html>

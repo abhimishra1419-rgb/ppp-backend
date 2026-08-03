@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Order Confirmed – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .success-banner{background:linear-gradient(135deg,#166534,#16a34a);color:#fff;text-align:center;padding:48px 24px}
+    .success-icon{font-size:4rem;margin-bottom:12px;animation:pop .5s cubic-bezier(.17,.67,.42,1.4)}
+    @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+    .success-banner h1{font-family:'Syne',sans-serif;font-size:clamp(1.5rem,3vw,2rem);margin-bottom:8px}
+    .order-tag{display:inline-block;background:rgba(255,255,255,.2);border-radius:8px;padding:8px 20px;margin-top:12px;font-size:1rem;font-weight:700;letter-spacing:.05em}
+    .pending-banner{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;text-align:center;padding:40px 24px}
+
+    .track-layout{display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start}
+    .prog-wrap{position:relative;margin:28px 0}
+    .prog-track{position:absolute;top:20px;left:0;right:0;height:3px;background:var(--grey-2)}
+    .prog-fill{position:absolute;top:20px;left:0;height:3px;background:var(--green);transition:width 1s ease}
+    .prog-steps{display:flex;justify-content:space-between;position:relative;z-index:1}
+    .prog-step{text-align:center;flex:1}
+    .pdot{width:40px;height:40px;border-radius:50%;border:3px solid var(--grey-2);background:#fff;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:.4s}
+    .pdot.done{background:var(--green);border-color:var(--green);color:#fff}
+    .pdot.active{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 0 0 4px rgba(0,181,216,.2)}
+    .plabel{font-size:.7rem;color:var(--text-light);font-weight:600}
+    .plabel.done{color:var(--green)}
+    .plabel.active{color:var(--teal)}
+
+    .order-detail-card{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);padding:24px;margin-bottom:20px}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+    .detail-item label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);display:block;margin-bottom:4px}
+    .detail-item span{font-size:.9rem;font-weight:600}
+
+    .item-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--grey-1)}
+    .item-row:last-child{border-bottom:none}
+    .item-img{width:56px;height:56px;background:var(--grey-1);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .item-img img{width:100%;height:100%;object-fit:contain}
+
+    .summary-box{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);overflow:hidden;position:sticky;top:80px}
+    .sb-header{background:var(--blue-dark);color:#fff;padding:16px 20px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+    .sb-body{padding:20px}
+    .sb-row{display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:10px}
+    .sb-total{display:flex;justify-content:space-between;font-size:1.05rem;font-weight:700;padding-top:12px;border-top:2px solid var(--grey-1)}
+
+    .loading-state{text-align:center;padding:80px 24px;color:var(--text-light)}
+    @media(max-width:900px){.track-layout{grid-template-columns:1fr}.summary-box{position:static}.detail-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+<div id="topBanner"></div>
+
+<div class="section">
+  <div id="loadingState" class="loading-state"><div style="font-size:3rem;margin-bottom:16px">⏳</div><p>Loading order details...</p></div>
+  <div id="orderContent" style="display:none">
+    <div class="track-layout">
+      <div>
+        <!-- Progress tracker -->
+        <div class="order-detail-card">
+          <h3 style="font-family:'Syne',sans-serif;margin-bottom:20px;font-size:1rem">Order Progress</h3>
+          <div class="prog-wrap">
+            <div class="prog-track"></div>
+            <div class="prog-fill" id="progFill" style="width:0%"></div>
+            <div class="prog-steps">
+              <div class="prog-step"><div class="pdot" id="pd1">1</div><div class="plabel" id="pl1">Placed</div></div>
+              <div class="prog-step"><div class="pdot" id="pd2">2</div><div class="plabel" id="pl2">Confirmed</div></div>
+              <div class="prog-step"><div class="pdot" id="pd3">3</div><div class="plabel" id="pl3">Processing</div></div>
+              <div class="prog-step"><div class="pdot" id="pd4">4</div><div class="plabel" id="pl4">Shipped</div></div>
+              <div class="prog-step"><div class="pdot" id="pd5">5</div><div class="plabel" id="pl5">Delivered</div></div>
+            </div>
+          </div>
+
+          <!-- Order info grid -->
+          <div class="detail-grid">
+            <div class="detail-item"><label>Order Number</label><span id="detOrderNum">—</span></div>
+            <div class="detail-item"><label>Order Date</label><span id="detDate">—</span></div>
+            <div class="detail-item"><label>Payment Method</label><span id="detPayment">—</span></div>
+            <div class="detail-item"><label>Payment Status</label><span id="detPayStatus">—</span></div>
+            <div class="detail-item"><label>Order Status</label><span id="detStatus">—</span></div>
+            <div class="detail-item"><label>Est. Delivery</label><span id="detETA" style="color:var(--green)">3–5 business days</span></div>
+          </div>
+
+          <!-- Tracking info (shown when shipped) -->
+          <div id="trackingInfo" style="display:none;background:var(--teal-light);border-radius:10px;padding:14px;border:1px solid var(--teal)">
+            <div style="font-weight:600;margin-bottom:4px">🚚 Tracking Number</div>
+            <div id="trackingNum" style="font-family:monospace;font-size:1rem;color:var(--blue-dark)"></div>
+            <div id="trackingUrl" style="margin-top:6px;font-size:.82rem"></div>
+          </div>
+        </div>
+
+        <!-- Shipping address -->
+        <div class="order-detail-card">
+          <h3 style="font-family:'Syne',sans-serif;margin-bottom:14px;font-size:1rem">📍 Shipping Address</h3>
+          <div id="shippingAddr" style="font-size:.88rem;line-height:1.8;color:var(--text)"></div>
+        </div>
+
+        <!-- Items ordered -->
+        <div class="order-detail-card">
+          <h3 style="font-family:'Syne',sans-serif;margin-bottom:16px;font-size:1rem">📦 Items Ordered</h3>
+          <div id="orderItems"></div>
+        </div>
+
+        <!-- Track another order -->
+        <div style="background:var(--grey-1);border-radius:14px;padding:20px;margin-top:20px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.95rem;margin-bottom:12px">🔍 Track Another Order</h3>
+          <div style="display:flex;gap:10px">
+            <input type="text" id="trackInput" class="form-control" placeholder="Enter Order Number (PPP...)"/>
+            <button class="btn btn-primary" onclick="trackAnotherOrder()">Track</button>
+          </div>
+          <div id="trackResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- Summary sidebar -->
+      <div class="summary-box">
+        <div class="sb-header">💰 Payment Summary</div>
+        <div class="sb-body">
+          <div class="sb-row"><span>Subtotal (excl. GST)</span><span>Rs.<span id="sbSub">0</span></span></div>
+          <div class="sb-row"><span>GST @18%</span><span>Rs.<span id="sbGST">0</span></span></div>
+          <div class="sb-row"><span>Shipping</span><span style="color:var(--green)">FREE</span></div>
+          <div class="sb-total"><span>Total</span><span style="color:var(--red)">Rs.<span id="sbTotal">0</span></span></div>
+          <div id="paymentNote" style="background:var(--grey-1);border-radius:8px;padding:12px;font-size:.78rem;color:var(--text-light);margin-top:12px"></div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+            <a href="products.html" class="btn btn-primary" style="justify-content:center">🛍️ Continue Shopping</a>
+            <a href="profile.html" class="btn btn-outline" style="justify-content:center">📦 My Orders</a>
+            <a id="waSupport" href="#" class="btn" style="background:#25D366;color:#fff;justify-content:center">📱 WhatsApp Support</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAuth();
+const API = Auth.API_BASE;
+document.getElementById('headerMount').innerHTML = renderHeader();
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+const params      = new URLSearchParams(window.location.search);
+const orderNum    = params.get('order');
+const paymentType = params.get('payment');
+const paid        = params.get('paid') === 'true';
+
+// Status step mapping
+const STATUS_STEPS = {
+  pending:    { step:1, fill:'0%'   },
+  confirmed:  { step:2, fill:'25%'  },
+  processing: { step:3, fill:'50%'  },
+  shipped:    { step:4, fill:'75%'  },
+  delivered:  { step:5, fill:'100%' },
+};
+
+function renderProgress(status) {
+  const s = STATUS_STEPS[status] || STATUS_STEPS.pending;
+  document.getElementById('progFill').style.width = s.fill;
+  for (let i=1; i<=5; i++) {
+    const dot = document.getElementById('pd'+i);
+    const lbl = document.getElementById('pl'+i);
+    if (i < s.step)      { dot.classList.add('done');   dot.textContent='✓'; lbl.classList.add('done'); }
+    else if (i===s.step) { dot.classList.add('active');                       lbl.classList.add('active'); }
+  }
+}
+
+function renderOrder(o) {
+  document.getElementById('loadingState').style.display  = 'none';
+  document.getElementById('orderContent').style.display  = 'block';
+
+  // Top banner
+  const isPaid = o.payment_status === 'paid';
+  const isConf = ['confirmed','processing','shipped','delivered'].includes(o.status);
+  if (isPaid || isConf) {
+    document.getElementById('topBanner').innerHTML =
+      '<div class="success-banner"><div class="success-icon">✅</div>' +
+      '<h1>' + (paid ? 'Payment Successful! Order Confirmed!' : 'Order Confirmed!') + '</h1>' +
+      '<p>' + (paid ? 'Your payment was received and order is confirmed.' : 'Your order has been placed successfully.') + '</p>' +
+      '<div class="order-tag">Order: ' + o.order_number + '</div></div>';
+  } else {
+    document.getElementById('topBanner').innerHTML =
+      '<div class="pending-banner"><div style="font-size:3rem;margin-bottom:12px">🕐</div>' +
+      '<h1 style="font-family:Syne,sans-serif">Order Placed — Pending Confirmation</h1>' +
+      '<p>Our team will confirm your COD order within 24 hours.</p>' +
+      '<div class="order-tag">Order: ' + o.order_number + '</div></div>';
+  }
+
+  // Progress
+  renderProgress(o.status);
+
+  // Details
+  document.getElementById('detOrderNum').textContent  = o.order_number;
+  document.getElementById('detDate').textContent      = new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('detPayment').textContent   = o.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment';
+  document.getElementById('detStatus').textContent    = o.status.charAt(0).toUpperCase() + o.status.slice(1);
+
+  const ps = o.payment_status;
+  document.getElementById('detPayStatus').innerHTML   =
+    ps === 'paid' ? '<span style="color:var(--green);font-weight:700">✅ Paid</span>' :
+    ps === 'pending' ? '<span style="color:var(--orange);font-weight:700">⏳ Pending</span>' : ps;
+
+  // Tracking info
+  if (o.tracking_number) {
+    document.getElementById('trackingInfo').style.display = 'block';
+    document.getElementById('trackingNum').textContent = o.tracking_number;
+    if (o.tracking_url) document.getElementById('trackingUrl').innerHTML = '<a href="'+o.tracking_url+'" target="_blank" style="color:var(--teal)">Track on courier website →</a>';
+  }
+
+  // Shipping address
+  try {
+    const addr = JSON.parse(o.shipping_address);
+    document.getElementById('shippingAddr').innerHTML =
+      '<strong>'+addr.name+'</strong> | 📱 '+addr.phone+'<br>'+
+      addr.line+', '+addr.city+', '+addr.state+' – '+addr.pin;
+  } catch(e) { document.getElementById('shippingAddr').textContent = o.shipping_address; }
+
+  // Items
+  if (o.items && o.items.length) {
+    document.getElementById('orderItems').innerHTML = o.items.map(i =>
+      '<div class="item-row">' +
+      '<div class="item-img">'+(i.image_url?'<img src="'+i.image_url+'" alt="">':'🖨️')+'</div>' +
+      '<div style="flex:1;padding-left:4px"><div style="font-size:.85rem;font-weight:600">'+i.name+'</div>' +
+      '<div style="font-size:.75rem;color:var(--text-light)">Qty: '+i.qty+'</div>' +
+      '<div style="font-weight:700;color:var(--red)">Rs.'+(i.price*i.qty).toLocaleString('en-IN')+'</div></div></div>'
+    ).join('');
+  }
+
+  // Summary
+  document.getElementById('sbSub').textContent   = o.subtotal.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('sbGST').textContent   = o.gst.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('sbTotal').textContent = o.total.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('paymentNote').innerHTML = o.payment_method === 'cod'
+    ? '💵 Cash on Delivery: Pay <strong>Rs.'+o.total.toLocaleString('en-IN')+'</strong> when order arrives'
+    : '✅ Online Payment: Rs.'+o.total.toLocaleString('en-IN')+' received via Razorpay';
+
+  // WhatsApp link
+  document.getElementById('waSupport').href = settings && settings.whatsapp_number ? 'https://wa.me/91'+settings.whatsapp_number+'?text=Hi,+I+need+help+with+my+order' : '#'+o.order_number+'. I need help.';
+}
+
+async function loadOrder() {
+  if (!orderNum) { document.getElementById('loadingState').innerHTML = '<h3>No order number found</h3><a href="profile.html" class="btn btn-primary" style="margin-top:16px">View My Orders</a>'; return; }
+  try {
+    // Try to fetch from API (logged in users see full details)
+    let attempts=0;
+    while(attempts<15){
+      attempts++;
+      try {
+        const res = await fetch(API + '/orders/track/' + orderNum, { cache:'no-store' });
+        const ct  = res.headers.get('content-type')||'';
+        if (!ct.includes('application/json')) throw new Error('not json');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        // Try to get full order with items for logged in users
+        try {
+          const token = Auth.getToken();
+          const res2  = await fetch(API + '/orders', { headers:{ Authorization:'Bearer '+token }, cache:'no-store' });
+          const data2 = await res2.json();
+          const fullOrder = data2.find(o => o.order_number === orderNum);
+          if (fullOrder) { renderOrder(fullOrder); return; }
+        } catch(e) {}
+        // Fallback to track data
+        renderOrder({ ...data, items: [], subtotal: data.total/1.18, gst: data.total - data.total/1.18 });
+        return;
+      } catch(e) {
+        document.getElementById('loadingState').innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-light)"><div style="font-size:2.5rem;margin-bottom:12px">⏳</div><p>Loading order details'+(attempts>1?' ('+attempts*3+'s)':'')+'...</p></div>';
+        await new Promise(r=>setTimeout(r,3000));
+      }
+    }
+    document.getElementById('loadingState').innerHTML = '<div style="text-align:center;padding:60px"><h3>Could not load order</h3><p>Please <a href="javascript:location.reload()" style="color:var(--teal)">refresh</a></p></div>';
+  } catch(e) {
+    document.getElementById('loadingState').innerHTML = '<div style="text-align:center;padding:60px"><h3>Error: '+e.message+'</h3></div>';
+  }
+}
+
+async function trackAnotherOrder() {
+  const num = document.getElementById('trackInput').value.trim().toUpperCase();
+  const res = document.getElementById('trackResult');
+  if (!num) { res.innerHTML='<div class="alert alert-error">Enter an order number</div>'; return; }
+  res.innerHTML='<div class="alert alert-info">Searching...</div>';
+  try {
+    let attempts=0;
+    while(attempts<5){
+      attempts++;
+      const r = await fetch(API+'/orders/track/'+num, {cache:'no-store'});
+      const ct = r.headers.get('content-type')||'';
+      if (!ct.includes('application/json')) { await new Promise(x=>setTimeout(x,3000)); continue; }
+      const d = await r.json();
+      if (!r.ok) { res.innerHTML='<div class="alert alert-error">'+d.error+'</div>'; return; }
+      const statusColor = { pending:'#f59e0b', confirmed:'#3b82f6', processing:'#8b5cf6', shipped:'#06b6d4', delivered:'#22c55e', cancelled:'#ef4444' };
+      res.innerHTML='<div class="card" style="padding:14px;margin-top:0">' +
+        '<strong>'+d.order_number+'</strong><br>' +
+        '<span style="color:'+( statusColor[d.status]||'#888' )+';font-weight:700">'+d.status.toUpperCase()+'</span><br>' +
+        '<small style="color:var(--text-light)">'+d.items+'</small><br>' +
+        '<small>Total: Rs.'+parseFloat(d.total).toLocaleString('en-IN')+'</small>' +
+        (d.tracking_number?'<br><small>Tracking: '+d.tracking_number+'</small>':'') +
+        '</div>';
+      return;
+    }
+    res.innerHTML='<div class="alert alert-error">Could not connect to server</div>';
+  } catch(e){ res.innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+
+document.getElementById('trackInput').addEventListener('keypress', e=>{ if(e.key==='Enter') trackAnotherOrder(); });
+loadOrder();
+</script>
+</body>
+</html>

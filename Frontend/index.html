@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="google-site-verification" content="Z9POn25RxMDVX5YZHaYDtA6NgAPNBbWHtsZwd_AMDew" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,minimum-scale=1.0"/>
+  <title id="pageTitle">Printer Spare Parts</title>
+  <meta name="description" id="metaDesc" content="Buy genuine printer reports online in India. HP, Canon, Epson, Ricoh, Brother parts."/>
+  <meta property="og:title" content="PrinterSpareParts - Printer Spare Parts India">
+  <meta property="og:description" content="Genuine & compatible parts for HP, Canon, Epson, Ricoh, Brother printers.">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .hero{background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue-mid) 60%,#1a6aaa 100%);color:#fff;padding:60px 24px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:-60px;right:-80px;width:400px;height:400px;border-radius:50%;background:rgba(0,181,216,.15)}
+    .hero-inner{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:40px;position:relative;z-index:1}
+    .hero-text h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;line-height:1.15;margin-bottom:16px}
+    .hero-text h1 span{color:var(--teal)}
+    .hero-text p{font-size:1.05rem;opacity:.85;max-width:480px;margin-bottom:28px;line-height:1.6}
+    .hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+    .btn-hero-primary{background:var(--teal);color:#fff;border:none;cursor:pointer;padding:13px 28px;border-radius:8px;font-size:.95rem;font-family:'DM Sans',sans-serif;font-weight:600;transition:transform .2s,box-shadow .2s;text-decoration:none;display:inline-block}
+    .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,181,216,.4)}
+    .btn-hero-outline{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.5);padding:11px 28px;border-radius:8px;font-size:.95rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+    .btn-hero-outline:hover{background:rgba(255,255,255,.15);border-color:#fff}
+    .hero-badges{display:flex;gap:16px;margin-top:28px;flex-wrap:wrap}
+    .hero-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:30px;padding:6px 14px;font-size:.82rem}
+
+    /* ── Top Categories ───────────────────────── */
+    .cat-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(13,44,107,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 12px 16px;cursor:pointer;text-decoration:none;transition:transform .2s,box-shadow .2s;border:2px solid transparent}
+    .cat-card:hover{transform:translateY(-4px);box-shadow:0 8px 28px rgba(13,44,107,.15);border-color:var(--teal)}
+    .cat-card .cat-img{width:90px;height:72px;object-fit:contain;margin-bottom:12px;border-radius:8px}
+    .cat-card .cat-icon{width:90px;height:72px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;margin-bottom:12px;background:var(--grey-1);border-radius:10px}
+    .cat-card .cat-name{font-size:.82rem;font-weight:600;color:var(--blue-dark);text-align:center;line-height:1.3}
+    .cat-skeleton{height:150px;background:linear-gradient(90deg,#f0f4fb 25%,#e0eaf8 50%,#f0f4fb 75%);background-size:200% 100%;animation:catShimmer 1.4s infinite;border-radius:14px}
+    @keyframes catShimmer{to{background-position:-200% 0}}
+
+    /* ── Legacy categories grid (kept for compatibility) ── */
+    .categories-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px}
+    .category-card{background:#fff;border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;text-decoration:none;color:var(--text);box-shadow:var(--card-shadow);transition:transform .2s,box-shadow .2s;border:2px solid transparent}
+    .category-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,181,216,.2);border-color:var(--teal)}
+    .cat-name-legacy{font-size:.82rem;font-weight:600;color:var(--blue-dark);margin-top:8px}
+
+    /* ── Products ──────────────────────────────── */
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+    .product-card{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);overflow:hidden;transition:transform .25s,box-shadow .25s;position:relative}
+    .product-card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(13,44,107,.15)}
+    .save-badge{position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:6px;z-index:2}
+    .wish-btn{position:absolute;top:12px;right:12px;background:#fff;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:2;transition:transform .2s}
+    .wish-btn:hover{transform:scale(1.15)}
+    .prod-img-wrap{width:100%;height:200px;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .prod-img-wrap img{width:100%;height:100%;object-fit:contain;padding:12px}
+    .prod-no-img{font-size:.85rem;color:var(--text-light);text-align:center;padding:20px}
+    .prod-body{padding:16px}
+    .prod-brand{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:6px}
+    .prod-name{font-size:.9rem;font-weight:600;color:var(--blue-dark);margin-bottom:12px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .prod-price{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+    .price-label{font-size:.75rem;color:var(--text-light)}
+    .price-curr{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--red)}
+    .price-old{font-size:.82rem;color:var(--text-light);text-decoration:line-through}
+    .add-to-cart{width:100%;background:var(--teal);color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:background .2s,transform .15s}
+    .add-to-cart:hover{background:var(--blue-dark);transform:scale(1.02)}
+
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+    .view-all{color:var(--teal);text-decoration:none;font-weight:600;font-size:.9rem;border-bottom:2px solid var(--teal);padding-bottom:2px}
+
+    .trust-band{background:var(--blue-dark);color:#fff;padding:36px 24px}
+    .trust-inner{max-width:1200px;margin:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:28px}
+    .trust-item{display:flex;align-items:center;gap:14px}
+    .trust-icon{font-size:2rem;width:56px;height:56px;background:rgba(0,181,216,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .trust-item h4{font-size:.95rem;font-weight:600;margin-bottom:3px}
+    .trust-item p{font-size:.78rem;opacity:.7}
+
+    .skeleton-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+    .skel-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--card-shadow)}
+    .skel{background:linear-gradient(90deg,var(--grey-1) 25%,#e8eef8 50%,var(--grey-1) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    @media(max-width:767px){
+      .hero-inner{flex-direction:column}
+      .products-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+      #topCategoriesGrid{grid-template-columns:repeat(3,1fr)!important;gap:10px!important}
+      .cat-card{padding:14px 8px 12px}
+      .cat-card .cat-img,.cat-card .cat-icon{width:64px;height:52px;font-size:2rem;margin-bottom:8px}
+      .cat-card .cat-name{font-size:.74rem}
+    }
+    @media(max-width:380px){#topCategoriesGrid{grid-template-columns:repeat(2,1fr)!important}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <h1 id="heroTitle">India's #1 Source for<br/>Printer Spare Parts</h1>
+      <p id="heroSubtitle">Genuine &amp; compatible parts for HP, Canon, Epson, Ricoh, Brother printers. Fast shipping across India.</p>
+      <div class="hero-btns">
+        <a href="products.html" class="btn-hero-primary" id="heroBtnPrimary">Shop Now</a>
+        <a href="products.html" class="btn-hero-outline" id="heroBtnSecondary">View All Products</a>
+      </div>
+      <div class="hero-badges">
+        <div class="hero-badge">✓ Original Parts</div>
+        <div class="hero-badge">🚚 Fast Delivery</div>
+        <div class="hero-badge">🛡 Trusted Seller</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="whatsapp-banner" id="whatsappBanner">
+  📱 For any queries contact us on WhatsApp: <strong></strong> &nbsp;|&nbsp; All prices exclusive of 18% GST
+</div>
+
+<!-- ── TOP CATEGORIES ─────────────────────────────────────────── -->
+<section class="section" id="topCategoriesSection">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <h2 class="section-title" style="margin-bottom:0">Top <span>Categories</span></h2>
+    <a href="products.html" style="font-size:.85rem;color:var(--teal);font-weight:600;text-decoration:none">View all →</a>
+  </div>
+  <div id="topCategoriesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px">
+    <!-- Skeleton placeholders while loading -->
+    <div class="cat-skeleton"></div>
+    <div class="cat-skeleton"></div>
+    <div class="cat-skeleton"></div>
+    <div class="cat-skeleton"></div>
+    <div class="cat-skeleton"></div>
+    <div class="cat-skeleton"></div>
+  </div>
+</section>
+
+<!-- ALL PRODUCTS -->
+<div style="background:#fff;padding:12px 0" id="allProductsSection">
+  <div class="section" style="padding-top:32px;padding-bottom:48px">
+    <div class="section-header">
+      <h2 class="section-title">Our <span>Products</span></h2>
+      <a href="products.html" class="view-all">View All</a>
+    </div>
+    <div id="allProductsGrid" class="products-grid"></div>
+  </div>
+</div>
+
+<!-- NEW ARRIVALS (only shown if products marked as new exist) -->
+<div class="section" id="newArrivalsSection" style="display:none">
+  <div class="section-header">
+    <h2 class="section-title">New <span>Arrivals</span></h2>
+    <a href="products.html" class="view-all">View All</a>
+  </div>
+  <div class="products-grid" id="newArrivalsGrid"></div>
+</div>
+
+<div class="trust-band">
+  <div class="trust-inner">
+    <div class="trust-item"><div class="trust-icon">🚚</div><div><h4>Fast Pan-India Shipping</h4><p>Orders dispatched within 24 hours</p></div></div>
+    <div class="trust-item"><div class="trust-icon">✅</div><div><h4>Genuine Parts Guaranteed</h4><p>100% original and import quality</p></div></div>
+    <div class="trust-item"><div class="trust-icon">↩️</div><div><h4>Easy Returns</h4><p>7-day hassle-free return policy</p></div></div>
+    <div class="trust-item"><div class="trust-icon">💬</div><div><h4>WhatsApp Support</h4><p id="trustWaNum">Instant help at </p></div></div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+const API = Auth.API_BASE;
+document.getElementById('headerMount').innerHTML = renderHeader('home');
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+// Keep Render backend alive — ping every 14 min so it never sleeps
+setInterval(async () => {
+  try { await fetch(API + '/categories', { cache: 'no-store' }); } catch(e) {}
+}, 14 * 60 * 1000);
+
+// ── Load settings and apply to page ──────────────────────────
+async function loadSettings() {
+  try {
+    const res = await fetch(API + '/settings', { cache: 'no-store' });
+    if (!res.ok) return;
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return;
+    const s = await res.json();
+
+    // Page title
+    if (s.site_name) {
+      document.getElementById('pageTitle').textContent = s.site_name + (s.tagline ? ' - ' + s.tagline : '');
+    }
+    // Meta description
+    if (s.meta_description) {
+      document.getElementById('metaDesc').content = s.meta_description;
+    }
+    // Hero section
+    if (s.hero_title)         document.getElementById('heroTitle').textContent        = s.hero_title;
+    if (s.hero_subtitle)      document.getElementById('heroSubtitle').textContent     = s.hero_subtitle;
+    if (s.hero_btn_primary)   document.getElementById('heroBtnPrimary').textContent   = s.hero_btn_primary;
+    if (s.hero_btn_secondary) document.getElementById('heroBtnSecondary').textContent = s.hero_btn_secondary;
+
+    // WhatsApp banner
+    if (s.whatsapp_number) {
+      document.getElementById('whatsappBanner').innerHTML =
+        '📱 ' + (s.whatsapp_banner_text || 'For any queries contact us on WhatsApp') +
+        ': <strong>' + s.whatsapp_number + '</strong>' +
+        ' &nbsp;|&nbsp; All prices exclusive of ' + (s.gst_rate || 18) + '% GST';
+      document.getElementById('trustWaNum').textContent = 'Instant help at ' + s.whatsapp_number;
+    }
+    // Section visibility
+    if (s.show_categories === false)  document.getElementById('topCategoriesSection').style.display = 'none';
+    if (s.show_new_arrivals === false) document.getElementById('newArrivalsSection').style.display   = 'none';
+
+    // Announcement bar
+    const topbar = document.querySelector('.topbar');
+    if (topbar && s.announcement_bar) {
+      topbar.innerHTML = '📦 ' + s.announcement_bar +
+        ' &nbsp;|&nbsp; <a href="https://wa.me/91' + (s.whatsapp_number || '') +
+        '">WhatsApp: ' + (s.whatsapp_number || '') + '</a>';
+    }
+  } catch(e) {}
+}
+
+// ── Top Categories ────────────────────────────────────────────
+const CAT_ICONS = {
+  laser:    '🖨️',
+  inkjet:   '💧',
+  toner:    '🖤',
+  thermal:  '🧾',
+  dmp:      '🖨️',
+  scanner:  '📠',
+  complete: '🖨️',
+  drum:     '⚙️',
+};
+
+async function loadTopCategories() {
+  const grid = document.getElementById('topCategoriesGrid');
+  if (!grid) return;
+  try {
+    const res  = await fetch(API + '/categories', { cache: 'no-store' });
+    const ct   = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) { grid.innerHTML = ''; return; }
+    const cats = await res.json();
+    if (!cats || !cats.length) { grid.innerHTML = ''; return; }
+
+    grid.innerHTML = cats.map(c => {
+      const href    = 'products.html?cat=' + c.slug;
+      const imgHtml = c.image_url
+        ? `<img class="cat-img" src="${c.image_url}" alt="${c.name}"
+             onerror="this.outerHTML='<div class=cat-icon>${CAT_ICONS[c.slug] || '🖨️'}</div>'"/>`
+        : `<div class="cat-icon">${CAT_ICONS[c.slug] || '🖨️'}</div>`;
+      return `<a class="cat-card" href="${href}">${imgHtml}<div class="cat-name">${c.name}</div></a>`;
+    }).join('');
+  } catch(e) {
+    const grid = document.getElementById('topCategoriesGrid');
+    if (grid) grid.innerHTML = '<p style="color:#888;font-size:.85rem;grid-column:1/-1">Could not load categories.</p>';
+  }
+}
+
+// ── Product card HTML ─────────────────────────────────────────
+function productCard(p) {
+  const save    = p.old_price ? (p.old_price - p.price) : 0;
+  const imgHtml = p.image_url
+    ? '<img src="' + p.image_url + '" alt="' + p.name + '" onerror="this.parentNode.innerHTML=\'<div class=prod-no-img>No Image</div>\'">'
+    : '<div class="prod-no-img">No Image</div>';
+  return '<div class="product-card">' +
+    (save > 0 ? '<div class="save-badge">Save Rs.' + save.toLocaleString('en-IN') + '</div>' : '') +
+    '<button class="wish-btn" onclick="this.textContent=this.textContent===\'🤍\'?\'❤️\':\'🤍\'">🤍</button>' +
+    '<a href="productdetails.html?id=' + p.id + '" style="display:block;text-decoration:none">' +
+      '<div class="prod-img-wrap">' + imgHtml + '</div>' +
+    '</a>' +
+    '<div class="prod-body">' +
+      '<div class="prod-brand">PRINTER Spare Parts</div>' +
+      '<a href="productdetails.html?id=' + p.id + '" style="text-decoration:none">' +
+        '<div class="prod-name">' + p.name + '</div>' +
+      '</a>' +
+      '<div class="prod-price">' +
+        '<span class="price-label">From</span>' +
+        '<span class="price-curr">Rs.' + p.price.toLocaleString('en-IN') + '</span>' +
+        (p.old_price ? '<span class="price-old">Rs.' + p.old_price.toLocaleString('en-IN') + '</span>' : '') +
+      '</div>' +
+      '<button class="add-to-cart" onclick=\'CartStore.add(' +
+        JSON.stringify({ id: p.id, name: p.name, price: p.price, oldPrice: p.old_price || p.price, image_url: p.image_url }) +
+      ')\'>Add to Cart</button>' +
+    '</div></div>';
+}
+
+function showSkeletons(id, count) {
+  const skel = Array(count).fill(
+    '<div class="skel-card">' +
+      '<div class="skel" style="height:200px;border-radius:0"></div>' +
+      '<div style="padding:16px">' +
+        '<div class="skel" style="height:14px;margin-bottom:8px"></div>' +
+        '<div class="skel" style="height:14px;width:60%;margin-bottom:12px"></div>' +
+        '<div class="skel" style="height:38px"></div>' +
+      '</div></div>'
+  ).join('');
+  const el = document.getElementById(id);
+  if (el) { el.className = 'skeleton-grid'; el.innerHTML = skel; }
+}
+
+// ── Load all products (retries until backend wakes up) ────────
+async function loadAllProducts() {
+  showSkeletons('allProductsGrid', 4);
+  let attempts = 0;
+  while (attempts < 15) {
+    attempts++;
+    try {
+      const res  = await fetch(API + '/products?limit=8&sort=newest', { cache: 'no-store' });
+      const ct   = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) throw new Error('not json');
+      const data = await res.json();
+      const grid = document.getElementById('allProductsGrid');
+      grid.className = 'products-grid';
+
+      if (data.products && data.products.length > 0) {
+        grid.innerHTML = data.products.map(productCard).join('');
+        // Show new arrivals section if any product is marked new
+        const newProds = data.products.filter(p => p.is_new);
+        if (newProds.length > 0) {
+          document.getElementById('newArrivalsSection').style.display = 'block';
+          document.getElementById('newArrivalsGrid').innerHTML = newProds.map(productCard).join('');
+        }
+      } else {
+        grid.innerHTML =
+          '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-light)">' +
+          '<div style="font-size:2.5rem;margin-bottom:12px">🛒</div>' +
+          '<h3 style="margin-bottom:8px;color:var(--text)">No Products Yet</h3>' +
+          '<p>Products will appear here once the admin adds them.</p></div>';
+      }
+      return;
+    } catch(e) {
+      const grid = document.getElementById('allProductsGrid');
+      if (grid) {
+        grid.className = 'products-grid';
+        grid.innerHTML =
+          '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-light)">' +
+          '<div style="font-size:2.5rem;margin-bottom:12px">⏳</div>' +
+          '<p>Loading products' + (attempts > 1 ? ' (' + (attempts * 3) + 's)' : '') + '...</p>' +
+          '<p style="font-size:.8rem;margin-top:6px;opacity:.7">First visit may take up to 30 seconds</p></div>';
+      }
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  const grid = document.getElementById('allProductsGrid');
+  if (grid) {
+    grid.className = 'products-grid';
+    grid.innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-light)">' +
+      '<div style="font-size:2.5rem;margin-bottom:12px">❌</div>' +
+      '<h3 style="color:var(--text);margin-bottom:8px">Could not connect</h3>' +
+      '<p>Please <a href="javascript:location.reload()" style="color:var(--teal)">refresh the page</a></p></div>';
+  }
+}
+
+// Init
+loadSettings();
+loadTopCategories();
+loadAllProducts();
+</script>
+</body>
+</html>

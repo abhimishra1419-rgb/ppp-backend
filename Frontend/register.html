@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Register – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .auth-wrap {
+      min-height:100vh;
+      background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue-mid) 50%,#1a6aaa 100%);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+      position:relative; overflow:hidden;
+    }
+    .auth-wrap::before { content:''; position:absolute; top:-80px; right:-80px; width:350px; height:350px; border-radius:50%; background:rgba(0,181,216,.12); }
+    .auth-wrap::after  { content:''; position:absolute; bottom:-60px; left:-60px; width:280px; height:280px; border-radius:50%; background:rgba(0,181,216,.08); }
+    .auth-card { background:#fff; border-radius:20px; width:100%; max-width:520px; padding:40px; box-shadow:0 24px 64px rgba(0,0,0,.25); position:relative; z-index:1; animation:slideUp .4s ease; }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .auth-logo { text-align:center; margin-bottom:28px; }
+    .auth-logo .circle { width:72px; height:72px; border-radius:50%; background:var(--blue-dark); margin:0 auto 12px; display:flex; align-items:center; justify-content:center; font-size:2rem; }
+    .auth-logo h2 { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:var(--blue-dark); }
+    .auth-logo p  { font-size:.85rem; color:var(--text-light); }
+    .step-indicator { display:flex; gap:8px; margin-bottom:28px; }
+    .step { flex:1; height:4px; border-radius:4px; background:var(--grey-2); transition:.4s; }
+    .step.active { background:var(--teal); }
+    .step.done   { background:var(--green); }
+    .step-form { display:none; }
+    .step-form.active { display:block; animation:fadeIn .3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+    .step-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--blue-dark); margin-bottom:20px; }
+    .checkbox-group { display:flex; align-items:flex-start; gap:10px; }
+    .checkbox-group input[type=checkbox] { margin-top:3px; accent-color:var(--teal); width:16px; height:16px; }
+    .checkbox-group label { font-size:.85rem; color:var(--text-light); }
+    .checkbox-group a { color:var(--teal); text-decoration:none; }
+    .nav-btns { display:flex; gap:12px; margin-top:24px; }
+    .pass-wrap { position:relative; }
+    .pass-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; }
+    .strength-bar { height:4px; border-radius:4px; margin-top:6px; transition:.3s; background:var(--grey-2); }
+    .strength-label { font-size:.72rem; margin-top:4px; }
+    .back-home { text-align:center; margin-top:16px; }
+    .back-home a { color:var(--teal); text-decoration:none; font-size:.85rem; }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="circle">🖨️</div>
+      <h2>Create Account</h2>
+      <p>Join Printer Spare Parts today</p>
+    </div>
+
+    <div class="step-indicator">
+      <div class="step active" id="s1"></div>
+      <div class="step" id="s2"></div>
+      <div class="step" id="s3"></div>
+    </div>
+
+    <div id="alertBox"></div>
+
+    <!-- Step 1: Personal Info -->
+    <div class="step-form active" id="form1">
+      <div class="step-title">👤 Personal Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name *</label>
+          <input type="text" id="firstName" class="form-control" placeholder="Rahul"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name *</label>
+          <input type="text" id="lastName" class="form-control" placeholder="Sharma"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input type="email" id="email" class="form-control" placeholder="rahul@example.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number *</label>
+        <input type="tel" id="phone" class="form-control" placeholder="9876543210" maxlength="10"/>
+        <div class="form-hint">10-digit mobile number (used for order updates)</div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="nextStep(1)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Password -->
+    <div class="step-form" id="form2">
+      <div class="step-title">🔒 Set Password</div>
+      <div class="form-group">
+        <label class="form-label">Password *</label>
+        <div class="pass-wrap">
+          <input type="password" id="password" class="form-control" placeholder="Min 8 characters" oninput="checkStrength(this.value)"/>
+          <button class="pass-toggle" onclick="togglePass('password',this)">👁️</button>
+        </div>
+        <div class="strength-bar" id="strengthBar"></div>
+        <div class="strength-label" id="strengthLabel"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password *</label>
+        <div class="pass-wrap">
+          <input type="password" id="password2" class="form-control" placeholder="Re-enter password"/>
+          <button class="pass-toggle" onclick="togglePass('password2',this)">👁️</button>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-outline" onclick="prevStep(2)">← Back</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="nextStep(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Confirm -->
+    <div class="step-form" id="form3">
+      <div class="step-title">✅ Confirm & Register</div>
+      <div id="summary" style="background:var(--grey-1);border-radius:10px;padding:16px;margin-bottom:20px;font-size:.88rem;line-height:1.8;"></div>
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms"/>
+          <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="marketing" checked/>
+          <label for="marketing">Send me order updates and exclusive deals on WhatsApp</label>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-outline" onclick="prevStep(3)">← Back</button>
+        <button class="btn btn-primary" id="submitBtn" style="flex:1;justify-content:center" onclick="doRegister()">🎉 Create Account</button>
+      </div>
+    </div>
+
+    <div class="back-home">
+      Already have an account? <a href="login.html">Login here</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  if (Auth.isLoggedIn()) window.location.href = 'profile.html';
+
+  let currentStep = 1;
+
+  function showAlert(msg, type='error') {
+    document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(() => document.getElementById('alertBox').innerHTML='', 4000);
+  }
+
+  function setStepUI(step) {
+    for (let i=1;i<=3;i++) {
+      document.getElementById('form'+i).classList.toggle('active', i===step);
+      const si = document.getElementById('s'+i);
+      si.classList.toggle('active', i===step);
+      si.classList.toggle('done',   i<step);
+    }
+    currentStep = step;
+  }
+
+  function nextStep(from) {
+    if (from===1) {
+      const fn = document.getElementById('firstName').value.trim();
+      const ln = document.getElementById('lastName').value.trim();
+      const em = document.getElementById('email').value.trim();
+      const ph = document.getElementById('phone').value.trim();
+      if (!fn||!ln||!em||!ph) return showAlert('Please fill all fields');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return showAlert('Invalid email address');
+      if (!/^[0-9]{10}$/.test(ph)) return showAlert('Enter a valid 10-digit phone number');
+    }
+    if (from===2) {
+      const p1 = document.getElementById('password').value;
+      const p2 = document.getElementById('password2').value;
+      if (p1.length < 8) return showAlert('Password must be at least 8 characters');
+      if (p1 !== p2)     return showAlert('Passwords do not match');
+    }
+    setStepUI(from+1);
+    if (from===2) buildSummary();
+  }
+
+  function prevStep(from) { setStepUI(from-1); }
+
+  function buildSummary() {
+    const fn = document.getElementById('firstName').value;
+    const ln = document.getElementById('lastName').value;
+    const em = document.getElementById('email').value;
+    const ph = document.getElementById('phone').value;
+    document.getElementById('summary').innerHTML = `
+      <strong>👤 Name:</strong> ${fn} ${ln}<br>
+      <strong>📧 Email:</strong> ${em}<br>
+      <strong>📱 Phone:</strong> ${ph}`;
+  }
+
+  function togglePass(id, btn) {
+    const el = document.getElementById(id);
+    el.type  = el.type==='password' ? 'text' : 'password';
+    btn.textContent = el.type==='password' ? '👁️' : '🙈';
+  }
+
+  function checkStrength(pass) {
+    const bar   = document.getElementById('strengthBar');
+    const label = document.getElementById('strengthLabel');
+    let score = 0;
+    if (pass.length >= 8)  score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    const levels = [
+      {color:'var(--red)',  w:'25%', text:'Weak'},
+      {color:'var(--orange)',w:'50%',text:'Fair'},
+      {color:'var(--yellow)',w:'75%',text:'Good'},
+      {color:'var(--green)', w:'100%',text:'Strong'},
+    ];
+    const l = levels[Math.max(0,score-1)] || levels[0];
+    bar.style.cssText = `height:4px;border-radius:4px;margin-top:6px;transition:.3s;width:${l.w};background:${l.color}`;
+    label.style.color = l.color;
+    label.textContent = pass ? l.text : '';
+  }
+
+  async function doRegister() {
+    if (!document.getElementById('terms').checked) return showAlert('Please accept the Terms of Service');
+    const name  = `${document.getElementById('firstName').value} ${document.getElementById('lastName').value}`.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const pass  = document.getElementById('password').value;
+    const btn   = document.getElementById('submitBtn');
+    btn.innerHTML = '<span class="spinner"></span> Creating…'; btn.disabled = true;
+    try {
+      await Auth.register(name, email, phone, pass);
+      window.location.href = 'profile.html';
+    } catch(e) {
+      showAlert(e.message);
+      btn.innerHTML = '🎉 Create Account'; btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

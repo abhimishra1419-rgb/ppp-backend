@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Product Details – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .detail-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+    .img-box{background:#fff;border-radius:20px;padding:20px;min-height:340px;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;position:relative}
+    .img-box img{max-width:100%;max-height:320px;object-fit:contain;border-radius:8px}
+    .save-tag{position:absolute;top:14px;left:14px;background:var(--red);color:#fff;font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:6px}
+    .wish-float{position:absolute;top:14px;right:14px;background:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:.2s}
+    .prod-brand{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--text-light);margin-bottom:8px}
+    .prod-title{font-family:'Syne',sans-serif;font-size:clamp(1.1rem,2vw,1.5rem);font-weight:800;color:var(--blue-dark);margin-bottom:10px;line-height:1.3}
+    .rating-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+    .stars-display{color:#f59e0b;font-size:1rem;letter-spacing:2px}
+    .rating-count{font-size:.82rem;color:var(--text-light)}
+    .rating-val{font-size:.9rem;font-weight:700;color:var(--text)}
+    .price-block{background:var(--grey-1);border-radius:12px;padding:16px 20px;margin-bottom:18px}
+    .big-price{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--red)}
+    .old-price{font-size:.95rem;color:var(--text-light);text-decoration:line-through;margin-left:12px}
+    .save-chip{display:inline-block;background:var(--green);color:#fff;border-radius:6px;font-size:.78rem;font-weight:700;padding:3px 10px;margin-left:10px}
+    .gst-note{font-size:.75rem;color:var(--text-light);margin-top:4px}
+    .stock-badge{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;margin-bottom:14px}
+    .qty-row{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .qty-ctrl{display:flex;align-items:center;border:1.5px solid var(--grey-2);border-radius:10px;overflow:hidden}
+    .qty-btn{width:40px;height:44px;border:none;background:#fff;cursor:pointer;font-size:1.2rem;font-weight:700;color:var(--blue-dark);transition:.15s}
+    .qty-btn:hover{background:var(--grey-1)}
+    .qty-num{width:48px;text-align:center;font-size:1rem;font-weight:700;line-height:44px}
+    .action-btns{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+    .action-btns .btn{flex:1;min-width:140px}
+    .wa-btn{width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;margin-top:4px;transition:.2s}
+    .delivery-info{background:var(--grey-1);border-radius:12px;padding:14px;margin-top:16px;font-size:.84rem;display:flex;flex-direction:column;gap:8px}
+    .tab-row{display:flex;border-bottom:2px solid var(--grey-1);margin-bottom:18px}
+    .tab-btn{padding:11px 18px;font-size:.85rem;font-weight:600;color:var(--text-light);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;font-family:'DM Sans',sans-serif}
+    .tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}
+    .tab-pane{display:none}.tab-pane.active{display:block}
+    .spec-row{display:flex;padding:10px 0;border-bottom:1px solid var(--grey-1);font-size:.86rem}
+    .spec-key{width:160px;color:var(--text-light);flex-shrink:0}
+    .spec-val{font-weight:600}
+    .review-card{background:var(--grey-1);border-radius:10px;padding:14px;margin-bottom:12px}
+    .review-stars{color:#f59e0b;font-size:.9rem;margin-bottom:4px}
+    .review-title{font-weight:600;font-size:.85rem;margin-bottom:4px}
+    .review-comment{font-size:.82rem;color:var(--text-light);line-height:1.5}
+    .review-meta{font-size:.72rem;color:var(--text-light);margin-top:6px}
+    .rating-summary{display:flex;gap:24px;align-items:center;padding:16px;background:var(--grey-1);border-radius:12px;margin-bottom:16px;flex-wrap:wrap}
+    .big-rating{font-family:'Syne',sans-serif;font-size:3rem;font-weight:800;color:var(--blue-dark);line-height:1}
+    .related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+    .related-card{background:#fff;border-radius:12px;box-shadow:var(--card-shadow);overflow:hidden;text-decoration:none;transition:.2s;color:var(--text)}
+    .related-card:hover{transform:translateY(-3px)}
+    .no-img-placeholder{display:flex;align-items:center;justify-content:center;font-size:.82rem;color:var(--text-light)}
+    @media(max-width:768px){.detail-layout{grid-template-columns:1fr}.action-btns{flex-direction:column}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Product Details</h1>
+    <div class="breadcrumb"><a href="index.html">Home</a> &rarr; <a href="products.html">Products</a> &rarr; <span id="breadcrumbName">Loading...</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <div id="loadingState" style="text-align:center;padding:80px;color:var(--text-light)"><div style="font-size:3rem;margin-bottom:16px">⏳</div><p>Loading product...</p></div>
+  <div id="errorState" style="display:none;text-align:center;padding:80px"><div style="font-size:3rem;margin-bottom:16px">❌</div><h3 style="margin-bottom:8px">Product Not Found</h3><a href="products.html" class="btn btn-primary" style="margin-top:16px">Browse All Products</a></div>
+  <div id="productContent" style="display:none">
+    <div class="detail-layout">
+      <div>
+        <div class="img-box">
+          <div class="save-tag" id="saveBadge" style="display:none"></div>
+          <button class="wish-float" id="wishBtn" onclick="toggleWishlist()">🤍</button>
+          <div id="imgContainer"></div>
+        </div>
+      </div>
+      <div>
+        <div class="prod-brand">PRINTER SPARE PARTS</div>
+        <h1 class="prod-title" id="prodName"></h1>
+        <div class="rating-row" id="ratingRow"></div>
+        <div class="price-block">
+          <div>
+            <span class="big-price">Rs.<span id="prodPrice"></span></span>
+            <span class="old-price" id="prodOldPrice" style="display:none"></span>
+            <span class="save-chip" id="saveChip" style="display:none"></span>
+          </div>
+          <div class="gst-note">+18% GST applicable at checkout</div>
+        </div>
+        <div class="stock-badge">
+          <div style="width:8px;height:8px;border-radius:50%" id="stockDot"></div>
+          <span id="stockText"></span>
+        </div>
+        <div class="qty-row">
+          <span style="font-size:.88rem;font-weight:600">Quantity:</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty(-1)">−</button>
+            <span class="qty-num" id="qtyDisplay">1</span>
+            <button class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+        </div>
+        <div class="action-btns">
+          <button class="btn btn-primary" onclick="addToCartNow()">🛒 Add to Cart</button>
+          <button class="btn btn-dark" onclick="buyNow()">⚡ Buy Now</button>
+        </div>
+        <button class="wa-btn" id="waBtn">📱 Enquire on WhatsApp</button>
+        <div class="delivery-info">
+          <div>📦 <strong>Free delivery</strong> on orders above Rs.999</div>
+          <div>🚚 <strong>Ships within 24 hours</strong> — 3 to 5 business days</div>
+          <div>↩️ <strong>7-day return</strong> for defective / wrong items</div>
+          <div>✅ <strong>Genuine quality</strong> guaranteed</div>
+          <div>🔒 <strong>Secure payment</strong> — UPI, Card, NetBanking, COD</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs: Description | Specs | Reviews -->
+    <div style="margin-top:48px">
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('desc',this)">Description</button>
+        <button class="tab-btn" onclick="switchTab('spec',this)">Specifications</button>
+        <button class="tab-btn" onclick="switchTab('reviews',this)" id="reviewTabBtn">Reviews</button>
+      </div>
+      <div class="tab-pane active" id="tab-desc">
+        <p id="prodDesc" style="line-height:1.8;color:var(--text-light);font-size:.92rem"></p>
+      </div>
+      <div class="tab-pane" id="tab-spec">
+        <div id="specTable"></div>
+      </div>
+      <div class="tab-pane" id="tab-reviews">
+        <div id="reviewsContent"></div>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <div id="relatedSection" style="margin-top:48px;display:none">
+      <h2 class="section-title" style="margin-bottom:20px">Related <span>Products</span></h2>
+      <div class="related-grid" id="relatedGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+const API = Auth.API_BASE;
+let qty = 1, product = null, waNum = '', isWishlisted = false;
+document.getElementById('headerMount').innerHTML = renderHeader('products');
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+async function loadProduct() {
+  const id = parseInt(new URLSearchParams(window.location.search).get('id'));
+  if (!id) { showError(); return; }
+  // Load settings for WhatsApp
+  try { const sr=await fetch(API+'/settings'); const s=await sr.json(); if(s.whatsapp_number) waNum=s.whatsapp_number; } catch(e){}
+  let attempts=0;
+  while(attempts<15){
+    attempts++;
+    try {
+      const res=await fetch(API+'/products/'+id,{cache:'no-store'});
+      const ct=res.headers.get('content-type')||'';
+      if (!ct.includes('application/json')) throw new Error('not ready');
+      if (!res.ok) { showError(); return; }
+      product = await res.json();
+      renderProduct();
+      loadRelated();
+      return;
+    } catch(e) {
+      document.getElementById('loadingState').innerHTML='<div style="text-align:center;padding:80px;color:var(--text-light)"><div style="font-size:3rem">⏳</div><p>Loading'+(attempts>1?' ('+attempts*3+'s)':'')+'...</p></div>';
+      await new Promise(r=>setTimeout(r,3000));
+    }
+  }
+  showError();
+}
+
+function renderProduct() {
+  document.getElementById('loadingState').style.display='none';
+  document.getElementById('productContent').style.display='block';
+  document.title = product.name.substring(0,60)+' – PrintersReports';
+  document.getElementById('breadcrumbName').textContent = product.name.substring(0,40)+'…';
+  document.getElementById('prodName').textContent = product.name;
+  document.getElementById('prodPrice').textContent = product.price.toLocaleString('en-IN');
+
+  // Image
+  const imgCont = document.getElementById('imgContainer');
+  if (product.image_url) {
+    const img = document.createElement('img'); img.src=product.image_url; img.alt=product.name;
+    img.onerror = ()=>{ imgCont.innerHTML='<div style="font-size:.9rem;color:var(--text-light)">No Image</div>'; };
+    imgCont.appendChild(img);
+  } else { imgCont.innerHTML='<div style="font-size:.9rem;color:var(--text-light)">No Image Available</div>'; }
+
+  // Price / savings
+  if (product.old_price && product.old_price > product.price) {
+    const save = product.old_price - product.price;
+    const pct  = Math.round(save/product.old_price*100);
+    document.getElementById('prodOldPrice').textContent='Rs.'+product.old_price.toLocaleString('en-IN');
+    document.getElementById('prodOldPrice').style.display='inline';
+    document.getElementById('saveChip').textContent=pct+'% OFF';
+    document.getElementById('saveChip').style.display='inline-block';
+    document.getElementById('saveBadge').textContent='Save Rs.'+save.toLocaleString('en-IN');
+    document.getElementById('saveBadge').style.display='block';
+  }
+
+  // Rating
+  const ratingRow = document.getElementById('ratingRow');
+  if (product.avg_rating && product.review_count > 0) {
+    const stars = Math.round(parseFloat(product.avg_rating));
+    ratingRow.innerHTML =
+      '<span class="stars-display">'+'⭐'.repeat(stars)+'☆'.repeat(5-stars)+'</span>'+
+      '<span class="rating-val">'+product.avg_rating+'</span>'+
+      '<span class="rating-count">('+product.review_count+' reviews)</span>'+
+      '<button onclick="switchTab(\'reviews\',document.getElementById(\'reviewTabBtn\'))" style="font-size:.78rem;color:var(--teal);background:none;border:none;cursor:pointer;text-decoration:underline">See all reviews</button>';
+    document.getElementById('reviewTabBtn').textContent = 'Reviews ('+product.review_count+')';
+  } else {
+    ratingRow.innerHTML = '<span style="font-size:.8rem;color:var(--text-light)">No reviews yet — be the first to review!</span>';
+  }
+
+  // Stock
+  const dot = document.getElementById('stockDot');
+  if (product.stock > 0) { dot.style.background='var(--green)'; document.getElementById('stockText').textContent='In Stock ('+product.stock+' available)'; }
+  else { dot.style.background='var(--red)'; document.getElementById('stockText').textContent='Out of Stock'; }
+
+  // Description
+  document.getElementById('prodDesc').textContent = product.description || 'No description available.';
+
+  // Specs
+  const specs = [['Product Name',product.name],['SKU / Part No',product.sku||'—'],['Category',product.category_name||'—'],['Price (excl. GST)','Rs.'+product.price.toLocaleString('en-IN')],['Stock',product.stock>0?product.stock+' units':'Out of Stock'],['GST Rate','18%'],['Return Policy','7 days replacement guarantee']];
+  document.getElementById('specTable').innerHTML = specs.map(([k,v])=>'<div class="spec-row"><span class="spec-key">'+k+'</span><span class="spec-val">'+v+'</span></div>').join('');
+
+  // Reviews
+  renderReviews();
+
+  // WhatsApp
+  document.getElementById('waBtn').onclick = () => window.open('https://wa.me/91'+waNum+'?text=Hi, I want to enquire about: '+product.name+' (Rs.'+product.price+')');
+
+  // Wishlist status
+  if (Auth.isLoggedIn()) {
+    Auth.authFetch('/wishlist').then(r=>r.json()).then(list => {
+      isWishlisted = (list||[]).some(w=>w.product_id===product.id||w.product?.id===product.id);
+      document.getElementById('wishBtn').textContent = isWishlisted ? '❤️' : '🤍';
+    }).catch(()=>{});
+  }
+}
+
+function renderReviews() {
+  const reviews = product.reviews || [];
+  const cnt = product.review_count || 0;
+  const avg = product.avg_rating;
+  if (!reviews.length) {
+    document.getElementById('reviewsContent').innerHTML = '<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:12px">⭐</div><h3>No reviews yet</h3><p>'+(Auth.isLoggedIn()?'Purchase and receive this product to write a review.':'Login and purchase to write a review.')+'</p></div>';
+    return;
+  }
+  const stars = Math.round(parseFloat(avg));
+  document.getElementById('reviewsContent').innerHTML =
+    '<div class="rating-summary">'+
+      '<div><div class="big-rating">'+avg+'</div><div style="color:#f59e0b;font-size:1.2rem;margin:4px 0">'+'⭐'.repeat(stars)+'☆'.repeat(5-stars)+'</div><div style="font-size:.78rem;color:var(--text-light)">'+cnt+' verified reviews</div></div>'+
+    '</div>'+
+    reviews.map(r =>
+      '<div class="review-card">'+
+        '<div class="review-stars">'+'⭐'.repeat(r.rating)+'☆'.repeat(5-r.rating)+'</div>'+
+        (r.title?'<div class="review-title">'+r.title+'</div>':'')+
+        '<div class="review-comment">'+r.comment+'</div>'+
+        '<div class="review-meta">'+r.user_name+' &mdash; '+new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' ✅ Verified Purchase</div>'+
+      '</div>'
+    ).join('');
+}
+
+function showError() { document.getElementById('loadingState').style.display='none'; document.getElementById('errorState').style.display='block'; }
+function changeQty(d) { qty=Math.max(1,Math.min(qty+d,product?.stock||99)); document.getElementById('qtyDisplay').textContent=qty; }
+function addToCartNow() { if(!product) return; CartStore.add({id:product.id,name:product.name,price:product.price,oldPrice:product.old_price||product.price,image_url:product.image_url}); if(qty>1) CartStore.setQty(product.id,qty); }
+function buyNow() { addToCartNow(); window.location.href='cart.html'; }
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active'); document.getElementById('tab-'+id).classList.add('active');
+}
+async function toggleWishlist() {
+  if (!Auth.isLoggedIn()) { window.location.href='login.html'; return; }
+  try {
+    const res  = await Auth.authFetch('/wishlist/'+product.id, { method:'POST' });
+    const data = await res.json();
+    isWishlisted = data.added;
+    document.getElementById('wishBtn').textContent = isWishlisted ? '❤️' : '🤍';
+    showToast(data.message, 'success');
+  } catch(e) {}
+}
+async function loadRelated() {
+  try {
+    const res = await fetch(API+'/products?limit=4', {cache:'no-store'});
+    const ct  = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) return;
+    const data = await res.json();
+    const list = (data.products||[]).filter(p=>p.id!==product.id).slice(0,4);
+    if (!list.length) return;
+    document.getElementById('relatedSection').style.display='block';
+    document.getElementById('relatedGrid').innerHTML = list.map(p =>
+      '<a href="productdetails.html?id='+p.id+'" class="related-card">'+
+        '<div style="height:130px;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden">'+
+          (p.image_url?'<img src="'+p.image_url+'" alt="'+p.name+'" style="width:100%;height:100%;object-fit:contain;padding:8px">':'<span class="no-img-placeholder">No Image</span>')+
+        '</div>'+
+        '<div style="padding:10px"><div style="font-size:.78rem;font-weight:600;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+p.name+'</div>'+
+        '<div style="font-weight:700;color:var(--red);font-size:.88rem">Rs.'+p.price.toLocaleString('en-IN')+'</div></div>'+
+      '</a>'
+    ).join('');
+  } catch(e) {}
+}
+loadProduct();
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Track Order – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .track-hero{background:linear-gradient(135deg,var(--blue-dark),var(--blue-mid));color:#fff;padding:60px 24px;text-align:center}
+    .track-hero h1{font-family:'Syne',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:12px}
+    .track-box{background:#fff;border-radius:16px;padding:28px;max-width:540px;margin:0 auto;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+    .track-input-row{display:flex;gap:12px}
+    .result-card{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);overflow:hidden;max-width:700px;margin:40px auto 0}
+    .result-header{background:var(--blue-dark);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    .result-header h3{font-family:'Syne',sans-serif;font-size:1rem}
+    .result-body{padding:24px}
+    .prog-wrap{position:relative;margin:24px 0}
+    .prog-track{position:absolute;top:20px;left:0;right:0;height:3px;background:var(--grey-2)}
+    .prog-fill{position:absolute;top:20px;left:0;height:3px;background:var(--green);transition:width 1s ease}
+    .prog-steps{display:flex;justify-content:space-between;position:relative;z-index:1}
+    .prog-step{text-align:center;flex:1}
+    .pdot{width:40px;height:40px;border-radius:50%;border:3px solid var(--grey-2);background:#fff;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.4s}
+    .pdot.done{background:var(--green);border-color:var(--green);color:#fff}
+    .pdot.active{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 0 0 4px rgba(0,181,216,.2)}
+    .plabel{font-size:.68rem;color:var(--text-light);font-weight:600}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+    .info-item label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);display:block;margin-bottom:3px}
+    .info-item span{font-size:.9rem;font-weight:600}
+    @media(max-width:600px){.track-input-row{flex-direction:column}.info-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+<div class="track-hero">
+  <h1>📦 Track Your Order</h1>
+  <p style="opacity:.8;margin-bottom:28px">Enter your order number to get real-time delivery status</p>
+  <div class="track-box">
+    <div class="track-input-row">
+      <input type="text" id="trackInput" class="form-control" placeholder="Enter Order Number (e.g. PPP1234567890)" style="flex:1"/>
+      <button class="btn btn-primary" onclick="trackOrder()">Track</button>
+    </div>
+    <p style="font-size:.78rem;color:var(--text-light);margin-top:10px">Your order number was sent after placing the order</p>
+  </div>
+</div>
+
+<div id="resultSection" style="display:none" class="section">
+  <div class="result-card">
+    <div class="result-header">
+      <h3>Order #<span id="rOrderNum">—</span></h3>
+      <span class="badge" id="rStatusBadge">—</span>
+    </div>
+    <div class="result-body">
+      <div class="prog-wrap">
+        <div class="prog-track"></div>
+        <div class="prog-fill" id="progFill" style="width:0%"></div>
+        <div class="prog-steps">
+          <div class="prog-step"><div class="pdot" id="pd1">1</div><div class="plabel">Placed</div></div>
+          <div class="prog-step"><div class="pdot" id="pd2">2</div><div class="plabel">Confirmed</div></div>
+          <div class="prog-step"><div class="pdot" id="pd3">3</div><div class="plabel">Processing</div></div>
+          <div class="prog-step"><div class="pdot" id="pd4">4</div><div class="plabel">Shipped</div></div>
+          <div class="prog-step"><div class="pdot" id="pd5">5</div><div class="plabel">Delivered</div></div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><label>Order Date</label><span id="rDate">—</span></div>
+        <div class="info-item"><label>Total Amount</label><span id="rTotal" style="color:var(--red)">—</span></div>
+        <div class="info-item"><label>Payment</label><span id="rPayment">—</span></div>
+        <div class="info-item"><label>Tracking No.</label><span id="rTracking">—</span></div>
+      </div>
+      <div style="background:var(--grey-1);border-radius:10px;padding:12px;font-size:.85rem;margin-bottom:20px">
+        <strong>Items:</strong> <span id="rItems">—</span>
+      </div>
+      <div id="rTrackingUrl" style="display:none;background:var(--teal-light);border-radius:8px;padding:12px;font-size:.85rem;margin-bottom:20px;border:1px solid var(--teal)"></div>
+      <div style="text-align:center">
+        <a id="waBtn" href="#" class="btn" style="background:#25D366;color:#fff">📱 WhatsApp Support</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="notFoundSection" style="display:none" class="section">
+  <div class="empty-state"><div class="icon">🔍</div><h3>Order Not Found</h3><p>Check the order number and try again.</p></div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+const API = Auth.API_BASE;
+document.getElementById('headerMount').innerHTML = renderHeader();
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+const STATUS_STEPS = { pending:1, confirmed:2, processing:3, shipped:4, delivered:5 };
+const STATUS_FILL  = { pending:'0%', confirmed:'25%', processing:'50%', shipped:'75%', delivered:'100%' };
+const STATUS_BADGE = { pending:'badge-warning', confirmed:'badge-info', processing:'badge-info', shipped:'badge-info', delivered:'badge-success', cancelled:'badge-danger' };
+
+async function trackOrder() {
+  const num = document.getElementById('trackInput').value.trim().toUpperCase();
+  if (!num) { return; }
+  document.getElementById('resultSection').style.display   = 'none';
+  document.getElementById('notFoundSection').style.display = 'none';
+
+  let attempts=0;
+  while(attempts<15){
+    attempts++;
+    try {
+      const res = await fetch(API+'/orders/track/'+num, {cache:'no-store'});
+      const ct  = res.headers.get('content-type')||'';
+      if (!ct.includes('application/json')) { await new Promise(r=>setTimeout(r,3000)); continue; }
+      const data = await res.json();
+      if (!res.ok) { document.getElementById('notFoundSection').style.display='block'; return; }
+      renderResult(data); return;
+    } catch(e) { await new Promise(r=>setTimeout(r,3000)); }
+  }
+}
+
+function renderResult(data) {
+  document.getElementById('rOrderNum').textContent  = data.order_number;
+  document.getElementById('rDate').textContent      = new Date(data.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('rTotal').textContent     = 'Rs.'+parseFloat(data.total).toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('rPayment').textContent   = data.payment_method==='cod'?'Cash on Delivery':'Online (Paid)';
+  document.getElementById('rTracking').textContent  = data.tracking_number||'Not yet assigned';
+  document.getElementById('rItems').textContent     = data.items||'—';
+
+  const badge = document.getElementById('rStatusBadge');
+  badge.textContent = data.status.toUpperCase();
+  badge.className   = 'badge '+(STATUS_BADGE[data.status]||'badge-grey');
+
+  // Progress
+  const step = STATUS_STEPS[data.status]||1;
+  document.getElementById('progFill').style.width = STATUS_FILL[data.status]||'0%';
+  for(let i=1;i<=5;i++){
+    const d=document.getElementById('pd'+i);
+    if (i<step)     { d.classList.add('done');   d.textContent='✓'; }
+    else if(i===step){ d.classList.add('active'); }
+  }
+
+  if (data.tracking_url) {
+    document.getElementById('rTrackingUrl').style.display='block';
+    document.getElementById('rTrackingUrl').innerHTML='🚚 <a href="'+data.tracking_url+'" target="_blank" style="color:var(--blue-dark);font-weight:600">Track your package on courier website →</a>';
+  }
+
+  document.getElementById('waBtn').href = (window._waNum ? 'https://wa.me/91'+window._waNum+'?text=Hi,+my+order+is+' : '#')+data.order_number+' needs help.';
+  document.getElementById('resultSection').style.display='block';
+  document.getElementById('resultSection').scrollIntoView({behavior:'smooth'});
+}
+
+document.getElementById('trackInput').addEventListener('keypress', e=>{ if(e.key==='Enter') trackOrder(); });
+const autoOrder = new URLSearchParams(window.location.search).get('order');
+if (autoOrder) { document.getElementById('trackInput').value=autoOrder; trackOrder(); }
+</script>
+</body>
+</html>

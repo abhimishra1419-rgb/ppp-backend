@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0"/>
+  <title>Cart – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .cart-layout { display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:start; }
+    .cart-item-row {
+      display:flex; gap:16px; padding:20px 0;
+      border-bottom:1px solid var(--grey-1); align-items:flex-start;
+    }
+    .item-img {
+      width:100px; height:100px; background:var(--grey-1);
+      border-radius:12px; display:flex; align-items:center; justify-content:center;
+      font-size:2.8rem; flex-shrink:0; text-decoration:none;
+    }
+    .item-info { flex:1; }
+    .item-brand { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-light); margin-bottom:4px; }
+    .item-name { font-size:.92rem; font-weight:600; color:var(--blue-dark); margin-bottom:8px; line-height:1.4; }
+    .item-price-row { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    .item-current { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--red); }
+    .item-old { font-size:.82rem; color:var(--text-light); text-decoration:line-through; }
+    .item-save { font-size:.75rem; color:var(--green); font-weight:600; }
+    .qty-ctrl { display:flex; align-items:center; gap:0; border:1.5px solid var(--grey-2); border-radius:8px; overflow:hidden; margin-top:12px; width:fit-content; }
+    .qty-btn { width:36px; height:36px; border:none; background:#fff; cursor:pointer; font-size:1.1rem; font-weight:700; color:var(--blue-dark); transition:background .15s; }
+    .qty-btn:hover { background:var(--grey-1); }
+    .qty-val { width:40px; text-align:center; font-size:.9rem; font-weight:600; border:none; outline:none; }
+    .remove-btn { background:none; border:none; color:var(--red); cursor:pointer; font-size:.82rem; margin-top:8px; }
+    .remove-btn:hover { text-decoration:underline; }
+    /* Summary */
+    .summary-card { background:#fff; border-radius:16px; padding:24px; box-shadow:var(--card-shadow); position:sticky; top:80px; }
+    .summary-card h3 { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:20px; color:var(--blue-dark); }
+    .summary-row { display:flex; justify-content:space-between; margin-bottom:12px; font-size:.9rem; }
+    .summary-row.total { font-size:1.1rem; font-weight:700; padding-top:14px; border-top:2px solid var(--grey-1); margin-top:4px; }
+    .coupon-wrap { display:flex; gap:8px; margin-bottom:20px; }
+    .coupon-wrap input { flex:1; }
+    .gst-note { font-size:.75rem; color:var(--text-light); text-align:center; margin-top:8px; }
+    .checkout-btn { width:100%; padding:14px; background:var(--blue-dark); color:#fff; border:none; border-radius:10px; font-size:1rem; font-family:'DM Sans',sans-serif; font-weight:700; cursor:pointer; transition:.2s; }
+    .checkout-btn:hover { background:var(--teal); }
+    .continue-btn { width:100%; padding:11px; background:transparent; color:var(--teal); border:2px solid var(--teal); border-radius:10px; font-size:.88rem; font-family:'DM Sans',sans-serif; font-weight:600; cursor:pointer; margin-top:10px; }
+    .continue-btn:hover { background:var(--teal-light); }
+    .trust-strip { display:flex; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--grey-1); }
+    .trust-item-sm { flex:1; text-align:center; font-size:.72rem; color:var(--text-light); }
+    .trust-item-sm div { font-size:1.4rem; margin-bottom:4px; }
+    @media(max-width:900px) { .cart-layout { grid-template-columns:1fr; } .summary-card { position:static; } }
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>🛒 Shopping Cart</h1>
+    <div class="breadcrumb"><a href="index.html">Home</a> → Cart</div>
+  </div>
+</div>
+
+<div class="section">
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="icon">🛒</div>
+    <h3>Your cart is empty</h3>
+    <p style="margin-bottom:24px">Add some printer parts to get started!</p>
+    <a href="products.html" class="btn btn-primary">🛍️ Browse Products</a>
+  </div>
+
+  <div class="cart-layout" id="cartLayout">
+    <!-- Left: Items -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 class="section-title" style="margin:0">Cart Items (<span id="itemCount">0</span>)</h2>
+        <button onclick="clearAll()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.85rem">🗑 Clear All</button>
+      </div>
+      <div id="cartItemsContainer"></div>
+    </div>
+
+    <!-- Right: Summary -->
+    <div class="summary-card">
+      <h3>Order Summary</h3>
+      <div class="coupon-wrap">
+        <input type="text" id="couponInput" class="form-control" placeholder="Enter coupon code"/>
+        <button class="btn btn-primary btn-sm" onclick="applyCoupon()">Apply</button>
+      </div>
+      <div id="couponMsg"></div>
+      <div class="summary-row"><span>Subtotal (excl. GST)</span><span>Rs.<span id="subtotalAmt">0.00</span></span></div>
+      <div class="summary-row"><span>GST (<span id="gstRateLabel">18</span>%)</span><span>Rs.<span id="gstAmt">0.00</span></span></div>
+      <div class="summary-row" id="shippingRow">
+        <span>Shipping</span>
+        <span id="shippingAmt" style="color:var(--green);font-weight:600">Calculating...</span>
+      </div>
+      <div id="freeShipMsg" style="display:none;font-size:.75rem;color:var(--green);padding:4px 0 8px;border-top:none">
+        🎉 You qualify for FREE shipping!
+      </div>
+      <div id="almostFreeMsg" style="display:none;font-size:.75rem;color:var(--orange);padding:4px 0 8px">
+        🚚 Add Rs.<span id="amtForFree">0</span> more for FREE shipping!
+      </div>
+      <div id="discountRow" class="summary-row" style="display:none;color:var(--green)"><span>Discount</span><span>-₹<span id="discountAmt">0</span></span></div>
+      <div class="summary-row" style="padding-top:14px;border-top:2px solid var(--grey-1);margin-top:4px;font-size:1.1rem;font-weight:700">
+        <span>Total (incl. GST)</span>
+        <span style="color:var(--red)">₹<span id="totalAmt">0.00</span></span>
+      </div>
+      <button class="checkout-btn" onclick="goCheckout()">Proceed to Checkout →</button>
+      <button class="continue-btn" onclick="window.location.href='products.html'">← Continue Shopping</button>
+      <p class="gst-note">*GST @18% is applicable on all products</p>
+      <div class="trust-strip">
+        <div class="trust-item-sm"><div>🔒</div>Secure</div>
+        <div class="trust-item-sm"><div>🚚</div>Fast Ship</div>
+        <div class="trust-item-sm"><div>↩️</div>Easy Return</div>
+        <div class="trust-item-sm"><div>✅</div>Genuine</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+  document.getElementById('headerMount').innerHTML = renderHeader('cart');
+  document.getElementById('footerMount').innerHTML = renderFooter();
+
+  let discount = 0;
+
+  function renderCart() {
+    const items = CartStore.getAll();
+    const count = CartStore.count();
+    document.getElementById('itemCount').textContent = count;
+
+    if (!items.length) {
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('cartLayout').style.display = 'none';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('cartLayout').style.display = 'grid';
+
+    document.getElementById('cartItemsContainer').innerHTML = items.map(item => `
+      <div class="cart-item-row" id="item-${item.id}">
+        <a href="productdetails.html?id=${item.id}" class="item-img" style="overflow:hidden;padding:0;">
+          ${item.image_url
+            ? `<img src="${item.image_url}" alt="${item.name}" style="width:100%;height:100%;object-fit:contain;padding:8px;" onerror="this.parentNode.innerHTML='🖨️';this.parentNode.style.fontSize='2.8rem';this.parentNode.style.padding='0';this.parentNode.style.display='flex';this.parentNode.style.alignItems='center';this.parentNode.style.justifyContent='center'"/>`
+            : '🖨️'}
+        </a>
+        <div class="item-info">
+          <div class="item-brand">PRINTERS SPARE PARTS</div>
+          <div class="item-name"><a href="productdetails.html?id=${item.id}" style="text-decoration:none;color:inherit">${item.name}</a></div>
+          <div class="item-price-row">
+            <span class="item-current">₹${(item.price*item.qty).toLocaleString('en-IN')}</span>
+            <span class="item-old">₹${(item.oldPrice*item.qty).toLocaleString('en-IN')}</span>
+            <span class="item-save">Save ₹${((item.oldPrice-item.price)*item.qty).toLocaleString('en-IN')}</span>
+          </div>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty(${item.id}, ${item.qty-1})">−</button>
+            <span class="qty-val">${item.qty}</span>
+            <button class="qty-btn" onclick="changeQty(${item.id}, ${item.qty+1})">+</button>
+          </div>
+          <button class="remove-btn" onclick="removeItem(${item.id})">✕ Remove</button>
+        </div>
+      </div>`).join('');
+
+    const sub = CartStore.subtotal();
+    const gst = CartStore.gst();
+    document.getElementById('subtotalAmt').textContent = sub.toLocaleString('en-IN',{minimumFractionDigits:2});
+    document.getElementById('gstAmt').textContent      = gst.toLocaleString('en-IN',{minimumFractionDigits:2});
+    // Load real shipping from API
+    document.getElementById('shippingAmt').textContent = 'Calculating...';
+    document.getElementById('shippingAmt').style.color = 'var(--text-light)';
+    loadShipping().then(function(data) {
+      const ship = (data && data.shipping) || CartStore.shipping();
+      const free = ship === 0;
+      document.getElementById('shippingAmt').textContent  = free ? 'FREE' : 'Rs.' + ship.toLocaleString('en-IN',{minimumFractionDigits:2});
+      document.getElementById('shippingAmt').style.color  = free ? 'var(--green)' : 'var(--text)';
+      // Free shipping message
+      if (data) {
+        document.getElementById('freeShipMsg').style.display   = free ? 'block' : 'none';
+        document.getElementById('almostFreeMsg').style.display = (!free && data.amount_for_free > 0) ? 'block' : 'none';
+        if (data.amount_for_free > 0 && !free) {
+          document.getElementById('amtForFree').textContent = data.amount_for_free.toLocaleString('en-IN', {maximumFractionDigits:0});
+        }
+        // Load GST rate from settings
+        const s = getCachedSettings();
+        if (s && s.gst_rate) document.getElementById('gstRateLabel').textContent = s.gst_rate;
+      }
+      const tot = sub + gst + ship - discount;
+      document.getElementById('totalAmt').textContent = tot.toLocaleString('en-IN',{minimumFractionDigits:2});
+    });
+    // Show initial total while shipping loads
+    const tot = sub + gst + CartStore.shipping() - discount;
+    document.getElementById('totalAmt').textContent = tot.toLocaleString('en-IN',{minimumFractionDigits:2});
+  }
+
+  function changeQty(id, qty) { CartStore.setQty(id, qty); renderCart(); }
+  function removeItem(id) { CartStore.remove(id); renderCart(); }
+  function clearAll() {
+    if (confirm('Clear all items from cart?')) { CartStore.clear(); renderCart(); }
+  }
+
+  function applyCoupon() {
+    const code  = document.getElementById('couponInput').value.trim().toUpperCase();
+    const msgEl = document.getElementById('couponMsg');
+    const coupons = { 'SAVE10': 10, 'PPP50': 50, 'WELCOME100': 100 };
+    if (coupons[code]) {
+      discount = coupons[code];
+      document.getElementById('discountRow').style.display = 'flex';
+      document.getElementById('discountAmt').textContent = discount;
+      msgEl.innerHTML = `<div class="alert alert-success" style="font-size:.8rem;padding:8px 12px">✅ Coupon applied! ₹${discount} off</div>`;
+    } else {
+      discount = 0;
+      document.getElementById('discountRow').style.display = 'none';
+      msgEl.innerHTML = `<div class="alert alert-error" style="font-size:.8rem;padding:8px 12px">❌ Invalid coupon code</div>`;
+    }
+    renderCart();
+    setTimeout(() => msgEl.innerHTML='', 3000);
+  }
+
+  function goCheckout() {
+    if (!CartStore.count()) return showToast('Your cart is empty','error');
+    if (!Auth.isLoggedIn()) return window.location.href = 'login.html?redirect=checkout.html';
+    window.location.href = 'checkout.html';
+  }
+
+  renderCart();
+  CartStore.onChange(renderCart);
+</script>
+</body>
+</html>

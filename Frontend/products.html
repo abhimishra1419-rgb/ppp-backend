@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0"/>
+  <title>Products – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .shop-layout{display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start}
+    .filter-sidebar{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);padding:24px;position:sticky;top:80px}
+    .filter-sidebar h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--blue-dark);display:flex;justify-content:space-between;align-items:center}
+    .filter-group{margin-bottom:20px;border-bottom:1px solid var(--grey-1);padding-bottom:16px}
+    .filter-group:last-child{border-bottom:none;margin-bottom:0}
+    .filter-group h4{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);margin-bottom:10px}
+    .filter-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer}
+    .filter-item input{accent-color:var(--teal);width:16px;height:16px}
+    .filter-item label{font-size:.85rem;cursor:pointer;flex:1}
+    .price-range-wrap{display:flex;flex-direction:column;gap:8px}
+    .price-range-wrap input[type=range]{width:100%;accent-color:var(--teal)}
+    .price-vals{display:flex;justify-content:space-between;font-size:.78rem;color:var(--text-light)}
+
+    .products-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+    .results-count{font-size:.88rem;color:var(--text-light)}
+    .sort-select{padding:8px 12px;border:1.5px solid var(--grey-2);border-radius:8px;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none}
+    .sort-select:focus{border-color:var(--teal)}
+    .view-toggle{display:flex;border:1.5px solid var(--grey-2);border-radius:8px;overflow:hidden}
+    .view-btn{padding:8px 12px;border:none;background:#fff;cursor:pointer;font-size:.95rem;transition:.2s}
+    .view-btn.active{background:var(--blue-dark);color:#fff}
+
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+    .product-card{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);overflow:hidden;transition:.25s;position:relative}
+    .product-card:hover{transform:translateY(-5px);box-shadow:0 12px 36px rgba(13,44,107,.15)}
+    .save-badge{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:6px;z-index:2}
+    .wish-btn{position:absolute;top:10px;right:10px;background:#fff;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:2;transition:.2s}
+    .wish-btn:hover{transform:scale(1.15)}
+    .prod-thumb{width:100%;height:180px;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden;text-decoration:none}
+    .prod-thumb img{width:100%;height:100%;object-fit:contain;padding:10px}
+    .no-img-label{font-size:.82rem;color:var(--text-light);text-align:center}
+    .prod-body{padding:14px}
+    .prod-brand{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-light);margin-bottom:4px}
+    .prod-name{font-size:.84rem;font-weight:600;color:var(--blue-dark);margin-bottom:10px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .prod-price{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .price-from{font-size:.72rem;color:var(--text-light)}
+    .price-curr{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--red)}
+    .price-old{font-size:.78rem;color:var(--text-light);text-decoration:line-through}
+    .add-btn{width:100%;background:var(--teal);color:#fff;border:none;padding:10px;border-radius:8px;font-size:.84rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:.2s}
+    .add-btn:hover{background:var(--blue-dark)}
+
+    .products-list{display:flex;flex-direction:column;gap:14px}
+    .product-list-item{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);display:flex;gap:16px;padding:16px;transition:.2s}
+    .product-list-item:hover{box-shadow:0 8px 28px rgba(13,44,107,.12)}
+    .list-thumb{width:120px;height:120px;background:var(--grey-1);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;text-decoration:none}
+    .list-thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
+    .list-body{flex:1}
+    .list-actions{display:flex;flex-direction:column;gap:8px;justify-content:center;flex-shrink:0;min-width:140px}
+
+    .pagination{display:flex;justify-content:center;gap:8px;margin-top:32px;flex-wrap:wrap}
+    .page-btn{width:40px;height:40px;border-radius:8px;border:1.5px solid var(--grey-2);background:#fff;cursor:pointer;font-size:.88rem;font-family:'DM Sans',sans-serif;transition:.2s}
+    .page-btn.active,.page-btn:hover{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark)}
+
+    .empty-state{text-align:center;padding:80px 24px;color:var(--text-light)}
+    .empty-state h3{font-size:1.2rem;margin-bottom:8px;color:var(--text)}
+
+    .skeleton-card{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);overflow:hidden}
+    .skel{background:linear-gradient(90deg,var(--grey-1) 25%,var(--grey-2) 50%,var(--grey-1) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    @media(max-width:900px){.shop-layout{grid-template-columns:1fr}.filter-sidebar{position:static}}
+    @media(max-width:600px){.products-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}}
+    .trend-chip{padding:6px 14px;background:#fff;border:1.5px solid var(--grey-2);border-radius:30px;font-size:.8rem;color:var(--blue-dark);text-decoration:none;font-weight:600;transition:border-color .2s;display:inline-block}
+    .trend-chip:hover{border-color:var(--teal)}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>All Products</h1>
+    <div class="breadcrumb"><a href="index.html">Home</a> &rarr; <span id="catTitle">All Products</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="shop-layout">
+    <!-- Sidebar Filters -->
+    <div class="filter-sidebar">
+      <h3>Filters <button onclick="clearFilters()" style="font-size:.72rem;color:var(--teal);background:none;border:none;cursor:pointer;font-weight:600">Clear All</button></h3>
+
+      <div class="filter-group">
+        <h4>Category</h4>
+        <div id="catFilterList">
+          <div style="font-size:.82rem;color:var(--text-light)">Loading...</div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h4>Price Range (Rs.)</h4>
+        <div class="price-range-wrap">
+          <input type="range" id="priceRange" min="0" max="20000" value="20000" oninput="updatePriceLabel(this.value);fetchProducts()"/>
+          <div class="price-vals"><span>Rs.0</span><span>Up to Rs.<span id="priceVal">20,000</span></span></div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h4>Availability</h4>
+        <div class="filter-item"><input type="checkbox" id="f-new" onchange="fetchProducts()"/><label for="f-new">New Arrivals</label></div>
+        <div class="filter-item"><input type="checkbox" id="f-best" onchange="fetchProducts()"/><label for="f-best">Best Sellers</label></div>
+      </div>
+    </div>
+
+    <!-- Products Area -->
+    <div>
+      <div id="trendingSearches" style="display:none;background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:var(--card-shadow)"></div>
+      <div class="products-header">
+        <span class="results-count">Showing <strong id="showCount">0</strong> products</span>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select class="sort-select" id="sortSelect" onchange="fetchProducts()">
+            <option value="newest">Newest First</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="name">Name A-Z</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-btn active" id="gridBtn" onclick="setView('grid')" title="Grid">&#8942;&#8942;</button>
+            <button class="view-btn" id="listBtn" onclick="setView('list')" title="List">&#9776;</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="gridView" class="products-grid"></div>
+      <div id="listView" class="products-list" style="display:none"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+const API = Auth.API_BASE;
+let viewMode    = 'grid';
+let currentPage = 1;
+let totalPages  = 1;
+let activeCat   = '';
+const LIMIT     = 12;
+
+document.getElementById('headerMount').innerHTML = renderHeader('products');
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+// Read URL params
+const params     = new URLSearchParams(window.location.search);
+activeCat        = params.get('cat') || '';
+const searchQ    = params.get('search') || '';
+if (searchQ) document.getElementById('catTitle').textContent = 'Search: "' + searchQ + '"';
+if (activeCat && activeCat !== 'all') document.getElementById('catTitle').textContent = activeCat.charAt(0).toUpperCase() + activeCat.slice(1) + ' Parts';
+
+// Load categories for sidebar
+async function loadCategoryFilters() {
+  try {
+    const res  = await fetch(API + '/categories');
+    const cats = await res.json();
+    const html = cats.map(c =>
+      '<div class="filter-item">' +
+      '<input type="checkbox" id="fc-'+c.slug+'" value="'+c.slug+'" ' + (activeCat===c.slug?'checked':'') + ' onchange="handleCatFilter(this)"/>' +
+      '<label for="fc-'+c.slug+'">'+c.name+'</label>' +
+      '</div>'
+    ).join('');
+    document.getElementById('catFilterList').innerHTML = html || '<div style="font-size:.82rem;color:var(--text-light)">No categories yet</div>';
+  } catch(e) {
+    document.getElementById('catFilterList').innerHTML = '<div style="font-size:.82rem;color:var(--text-light)">Could not load</div>';
+  }
+}
+
+function handleCatFilter(cb) {
+  // Uncheck all others
+  document.querySelectorAll('#catFilterList input').forEach(i => { if (i !== cb) i.checked = false; });
+  activeCat   = cb.checked ? cb.value : '';
+  currentPage = 1;
+  fetchProducts();
+}
+
+function updatePriceLabel(val) {
+  document.getElementById('priceVal').textContent = parseInt(val).toLocaleString('en-IN');
+}
+
+// Fetch products from API
+async function fetchProducts() {
+  // Track search query if present
+  if (searchQ) {
+    try {
+      fetch(Auth.API_BASE + '/search/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQ }),
+      }).catch(() => {});
+    } catch(e) {}
+  }
+  showSkeletons();
+  const sort       = document.getElementById('sortSelect').value;
+  const maxPrice   = document.getElementById('priceRange').value;
+  const isNew      = document.getElementById('f-new').checked  ? '&new=1' : '';
+  const isBest     = document.getElementById('f-best').checked ? '&bestseller=1' : '';
+  const catParam   = activeCat ? '&cat=' + activeCat : '';
+  const searchParam= searchQ   ? '&search=' + encodeURIComponent(searchQ) : '';
+  const url        = API + '/products?limit=' + LIMIT + '&page=' + currentPage + '&sort=' + sort + catParam + searchParam + isNew + isBest;
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    const list = data.products || [];
+    totalPages = Math.ceil((data.total || 0) / LIMIT) || 1;
+    document.getElementById('showCount').textContent = data.total || 0;
+
+    // Filter by price client-side (server doesn't have price filter)
+    const filtered = list.filter(p => p.price <= parseInt(maxPrice));
+
+    if (!filtered.length) {
+      const emptyHtml = '<div class="empty-state" style="grid-column:1/-1">' +
+        '<div style="font-size:3rem;margin-bottom:16px">🔍</div>' +
+        '<h3>No products found</h3>' +
+        '<p style="margin-bottom:20px">Try adjusting your filters or search term.</p>' +
+        '<a href="products.html" class="btn btn-primary">View All Products</a>' +
+        '</div>';
+      document.getElementById('gridView').innerHTML = emptyHtml;
+      document.getElementById('listView').innerHTML = emptyHtml;
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+
+    renderGrid(filtered);
+    renderList(filtered);
+    renderPagination();
+  } catch(e) {
+    const errHtml = '<div class="empty-state" style="grid-column:1/-1">' +
+      '<div style="font-size:3rem;margin-bottom:16px">⚠️</div>' +
+      '<h3>Could not load products</h3>' +
+      '<p>Make sure the backend server is running. Check your internet connection</p>' +
+      '</div>';
+    document.getElementById('gridView').innerHTML = errHtml;
+    document.getElementById('listView').innerHTML = errHtml;
+  }
+}
+
+function showSkeletons() {
+  const skel = Array(6).fill(
+    '<div class="skeleton-card"><div class="skel" style="height:180px;border-radius:0"></div>' +
+    '<div style="padding:14px"><div class="skel" style="height:14px;margin-bottom:8px"></div>' +
+    '<div class="skel" style="height:14px;width:70%;margin-bottom:12px"></div>' +
+    '<div class="skel" style="height:36px"></div></div></div>'
+  ).join('');
+  document.getElementById('gridView').innerHTML = skel;
+  document.getElementById('listView').innerHTML = '';
+}
+
+function makeImgHtml(p, size) {
+  if (p.image_url) return '<img src="' + p.image_url + '" alt="' + p.name + '" style="width:100%;height:100%;object-fit:contain;padding:8px" onerror="this.parentNode.innerHTML=\'<span class=no-img-label>No Image</span>\'">';
+  return '<span class="no-img-label">No Image</span>';
+}
+
+function renderGrid(list) {
+  document.getElementById('gridView').innerHTML = list.map(p => {
+    const save = p.old_price ? p.old_price - p.price : 0;
+    return '<div class="product-card">' +
+      (save > 0 ? '<div class="save-badge">Save Rs.' + save.toLocaleString('en-IN') + '</div>' : '') +
+      '<button class="wish-btn" onclick="this.textContent=this.textContent===\'🤍\'?\'❤️\':\'🤍\'">🤍</button>' +
+      '<a href="productdetails.html?id=' + p.id + '" class="prod-thumb">' + makeImgHtml(p) + '</a>' +
+      '<div class="prod-body">' +
+      '<div class="prod-brand">PRINTER SPARE PARTS</div>' +
+      '<a href="productdetails.html?id='+p.id+'" style="text-decoration:none"><div class="prod-name">'+p.name+'</div></a>' +
+      '<div class="prod-price"><span class="price-from">From</span>' +
+      '<span class="price-curr">Rs.' + p.price.toLocaleString('en-IN') + '</span>' +
+      (p.old_price ? '<span class="price-old">Rs.' + p.old_price.toLocaleString('en-IN') + '</span>' : '') +
+      '</div>' +
+      '<button class="add-btn" onclick=\'CartStore.add(' + JSON.stringify({id:p.id,name:p.name,price:p.price,oldPrice:p.old_price||p.price,image_url:p.image_url}) + ')\'>Add to Cart</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderList(list) {
+  document.getElementById('listView').innerHTML = list.map(p => {
+    const save = p.old_price ? p.old_price - p.price : 0;
+    return '<div class="product-list-item">' +
+      '<a href="productdetails.html?id='+p.id+'" class="list-thumb">' + makeImgHtml(p) + '</a>' +
+      '<div class="list-body">' +
+      '<div class="prod-brand">PRINTERS PARTS POINT</div>' +
+      '<a href="productdetails.html?id='+p.id+'" style="text-decoration:none;color:var(--blue-dark);font-weight:600;font-size:.9rem;line-height:1.4;display:block;margin-bottom:8px">'+p.name+'</a>' +
+      (save>0 ? '<span class="badge badge-danger" style="font-size:.72rem">Save Rs.'+save.toLocaleString('en-IN')+'</span>' : '') +
+      (p.is_new ? '<span class="badge badge-success" style="margin-left:6px;font-size:.72rem">New</span>' : '') +
+      (p.is_bestseller ? '<span class="badge badge-info" style="margin-left:6px;font-size:.72rem">Best Seller</span>' : '') +
+      '</div>' +
+      '<div class="list-actions">' +
+      '<div style="text-align:right"><span style="font-family:Syne,sans-serif;font-size:1.2rem;font-weight:700;color:var(--red)">Rs.'+p.price.toLocaleString('en-IN')+'</span></div>' +
+      (p.old_price ? '<div style="text-align:right;font-size:.78rem;color:var(--text-light);text-decoration:line-through">Rs.'+p.old_price.toLocaleString('en-IN')+'</div>' : '') +
+      '<button class="add-btn" onclick=\'CartStore.add('+JSON.stringify({id:p.id,name:p.name,price:p.price,oldPrice:p.old_price||p.price,image_url:p.image_url})+')\'style="padding:9px">Add to Cart</button>' +
+      '<a href="productdetails.html?id='+p.id+'" class="btn btn-outline btn-sm" style="text-align:center;justify-content:center;width:100%">View Details</a>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderPagination() {
+  if (totalPages <= 1) { document.getElementById('pagination').innerHTML=''; return; }
+  let html = '';
+  if (currentPage > 1) html += '<button class="page-btn" onclick="goPage('+(currentPage-1)+')">&#8592;</button>';
+  for (let i=1; i<=totalPages; i++) html += '<button class="page-btn'+(i===currentPage?' active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+  if (currentPage < totalPages) html += '<button class="page-btn" onclick="goPage('+(currentPage+1)+')">&#8594;</button>';
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function goPage(n) { currentPage = n; fetchProducts(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function setView(mode) {
+  viewMode = mode;
+  document.getElementById('gridView').style.display = mode==='grid' ? 'grid'  : 'none';
+  document.getElementById('listView').style.display = mode==='list' ? 'flex'  : 'none';
+  document.getElementById('gridBtn').classList.toggle('active', mode==='grid');
+  document.getElementById('listBtn').classList.toggle('active', mode==='list');
+}
+
+function clearFilters() {
+  document.querySelectorAll('#catFilterList input').forEach(i => i.checked=false);
+  document.getElementById('f-new').checked  = false;
+  document.getElementById('f-best').checked = false;
+  document.getElementById('priceRange').value = 20000;
+  document.getElementById('priceVal').textContent = '20,000';
+  activeCat   = '';
+  currentPage = 1;
+  fetchProducts();
+}
+
+// Init — wake backend then load products
+async function init() {
+  loadCategoryFilters();
+  document.getElementById('gridView').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-light)"><div style="font-size:2rem;margin-bottom:12px">⏳</div><p id="prodWakeMsg">Connecting to server...</p></div>';
+  const isAwake = await Auth.wakeUp((attempt) => {
+    const el = document.getElementById('prodWakeMsg');
+    if (el && attempt > 1) el.textContent = 'Server is starting up... (' + (attempt*3) + 's) Please wait.';
+  });
+  if (!isAwake) {
+    document.getElementById('gridView').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-light)"><h3>Server could not be reached</h3><p>Please refresh the page.</p></div>';
+    return;
+  }
+  fetchProducts();
+}
+init();
+</script>
+
+<script>
+async function loadTrendingSearches() {
+  try {
+    var res  = await fetch(Auth.API_BASE + '/search/trending', { cache: 'no-store' });
+    var ct   = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return;
+    var data = await res.json();
+    if (!data || !data.length) return;
+    var el = document.getElementById('trendingSearches');
+    if (!el) return;
+    var links = data.slice(0, 10).map(function(t) {
+      var enc = encodeURIComponent(t.query);
+      var lbl = t.query.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return '<a href="products.html?search=' + enc + '"' +
+        ' class="trend-chip">' + lbl + '</a>';
+    }).join('');
+    el.innerHTML = '<div style="font-size:.82rem;color:var(--text-light);margin-bottom:10px;font-weight:600">🔥 Popular Searches</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' + links + '</div>';
+    el.style.display = 'block';
+  } catch(e) {}
+}
+loadTrendingSearches();
+</script>
+</body>
+</html>

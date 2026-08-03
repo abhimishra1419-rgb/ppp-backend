@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,minimum-scale=1.0"/>
+  <title>Login – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+
+  <!-- Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    .auth-wrap{min-height:100vh;background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue-mid) 50%,#1a6aaa 100%);display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+    .auth-wrap::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;border-radius:50%;background:rgba(0,181,216,.12)}
+    .auth-wrap::after{content:'';position:absolute;bottom:-80px;left:-60px;width:300px;height:300px;border-radius:50%;background:rgba(0,181,216,.08)}
+    .auth-card{background:#fff;border-radius:20px;width:100%;max-width:440px;padding:40px;box-shadow:0 24px 64px rgba(0,0,0,.25);position:relative;z-index:1;animation:slideUp .4s ease}
+    @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .auth-logo{text-align:center;margin-bottom:28px}
+    .auth-logo .circle{width:72px;height:72px;border-radius:50%;background:var(--blue-dark);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem}
+    .auth-logo h2{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--blue-dark)}
+    .auth-logo p{font-size:.85rem;color:var(--text-light)}
+    .tabs{display:flex;background:var(--grey-1);border-radius:10px;padding:4px;margin-bottom:28px}
+    .tab-btn{flex:1;padding:9px;border:none;background:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:.2s;color:var(--text-light)}
+    .tab-btn.active{background:#fff;color:var(--blue-dark);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+    .divider{text-align:center;margin:20px 0;font-size:.82rem;color:var(--text-light);position:relative}
+    .divider::before,.divider::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--grey-2)}
+    .divider::before{left:0}.divider::after{right:0}
+    .pass-wrap{position:relative}
+    .pass-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem}
+    .forgot-link{font-size:.82rem;color:var(--teal);text-decoration:none;cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;padding:0}
+    .forgot-link:hover{text-decoration:underline}
+    .back-home{text-align:center;margin-top:20px}
+    .back-home a{color:var(--teal);text-decoration:none;font-size:.85rem}
+    .social-btns{display:flex;flex-direction:column;gap:10px}
+    .social-btn-real{width:100%;padding:11px 16px;border:1.5px solid var(--grey-2);border-radius:10px;background:#fff;cursor:pointer;font-size:.88rem;font-family:'DM Sans',sans-serif;font-weight:600;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text)}
+    .social-btn-real:hover{border-color:var(--teal);background:var(--grey-1)}
+    .social-btn-real:disabled{opacity:.6;cursor:not-allowed}
+    .google-btn{border-color:#dadce0}
+    .google-btn:hover{border-color:#1a73e8;background:#f8f9ff}
+    .facebook-btn{border-color:#1877f2;color:#1877f2}
+    .facebook-btn:hover{background:#f0f4ff}
+    .strength-bar{height:4px;border-radius:2px;background:var(--grey-2);margin-top:6px;overflow:hidden}
+    .strength-fill{height:100%;width:0%;transition:width .3s,background .3s;border-radius:2px}
+    .strength-text{font-size:.72rem;margin-top:4px}
+    .fp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+    .fp-overlay.open{opacity:1;pointer-events:all}
+    .fp-modal{background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.3);overflow:hidden}
+    .fp-header{background:var(--blue-dark);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+    .fp-header h3{font-family:'Syne',sans-serif;font-size:1rem;margin:0}
+    .fp-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1}
+    .fp-body{padding:24px}
+    .fp-step{display:none}.fp-step.active{display:block}
+    .step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+    .step-dot{width:8px;height:8px;border-radius:50%;background:var(--grey-2);transition:.3s}
+    .step-dot.active{background:var(--teal);width:24px;border-radius:4px}
+    .step-dot.done{background:var(--green)}
+    .otp-row{display:flex;gap:8px;justify-content:center;margin:16px 0}
+    .otp-box{width:46px;height:54px;border:2px solid var(--grey-2);border-radius:10px;text-align:center;font-size:1.4rem;font-weight:700;font-family:'Syne',sans-serif;color:var(--blue-dark);outline:none;transition:.2s}
+    .otp-box:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,181,216,.15)}
+    .otp-box.filled{border-color:var(--blue-dark);background:var(--grey-1)}
+    .resend-row{text-align:center;font-size:.82rem;color:var(--text-light);margin-top:10px}
+    .resend-btn{background:none;border:none;color:var(--teal);font-size:.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .resend-btn:disabled{color:var(--text-light);cursor:not-allowed}
+    .success-box{text-align:center;padding:16px 0}
+
+    /* Hidden Google button container — used to trigger real Google popup */
+    #googleBtnContainer { display:none; }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="circle">🖨️</div>
+      <h2>Printer Spare Parts</h2>
+      <p>Sign in to your account</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN TAB -->
+    <div class="tab-panel active" id="tab-login">
+      <div id="loginAlert"></div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" class="form-control" placeholder="Enter your password"
+            onkeypress="if(event.key==='Enter')doLogin()"/>
+          <button class="pass-toggle" onclick="togglePass('loginPass',this)" type="button">👁️</button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-bottom:20px">
+        <button class="forgot-link" onclick="openForgotModal()" type="button">Forgot password?</button>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="doLogin()" id="loginBtn">
+        Login to Account
+      </button>
+
+      <div class="divider">or continue with</div>
+
+      <div class="social-btns">
+        <!-- Custom Google button — triggers real Google popup via hidden GSI button -->
+        <button class="social-btn-real google-btn" onclick="signInWithGoogle()" id="googleLoginBtn" type="button">
+          <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#4285F4" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.1-6.1C34.36 3.02 29.47 1 24 1 14.82 1 7.07 6.48 3.69 14.19l7.12 5.53C12.5 13.6 17.8 9.5 24 9.5z"/>
+            <path fill="#34A853" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.74H24v9h12.7c-.55 2.98-2.2 5.5-4.68 7.2l7.18 5.58C43.28 37.42 46.52 31.38 46.52 24.5z"/>
+            <path fill="#FBBC05" d="M10.81 28.28A14.6 14.6 0 0 1 9.5 24c0-1.5.26-2.95.71-4.28l-7.12-5.53A23.93 23.93 0 0 0 0 24c0 3.87.93 7.52 2.57 10.73l8.24-6.45z"/>
+            <path fill="#EA4335" d="M24 47c5.47 0 10.06-1.81 13.41-4.91l-7.18-5.58c-1.83 1.23-4.17 1.96-6.23 1.96-6.2 0-11.5-4.1-13.19-9.72l-8.24 6.45C7.07 41.52 14.82 47 24 47z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <button class="social-btn-real facebook-btn" onclick="signInWithFacebook()" id="facebookLoginBtn" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          Continue with Facebook
+        </button>
+      </div>
+
+      <!-- Hidden real Google button — GSI renders here, we click it programmatically -->
+      <div id="googleBtnContainer"></div>
+    </div>
+
+    <!-- REGISTER TAB -->
+    <div class="tab-panel" id="tab-register">
+      <div id="regAlert"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="regName" class="form-control" placeholder="Your full name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" id="regPhone" class="form-control" placeholder="10-digit number" maxlength="10"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input type="email" id="regEmail" class="form-control" placeholder="you@example.com"/>
+        <div class="form-hint">We send order confirmations and OTP to this email</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password *</label>
+        <div class="pass-wrap">
+          <input type="password" id="regPass" class="form-control" placeholder="Min 8 characters" oninput="checkStrength(this.value)"/>
+          <button class="pass-toggle" onclick="togglePass('regPass',this)" type="button">👁️</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="strength-text" id="strengthText"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password *</label>
+        <input type="password" id="regPass2" class="form-control" placeholder="Re-enter password"
+          onkeypress="if(event.key==='Enter')doRegister()"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="doRegister()" id="regBtn">
+        Create Account
+      </button>
+
+      <div class="divider">or sign up with</div>
+      <div class="social-btns">
+        <button class="social-btn-real google-btn" onclick="signInWithGoogle()" type="button">
+          <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#4285F4" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.1-6.1C34.36 3.02 29.47 1 24 1 14.82 1 7.07 6.48 3.69 14.19l7.12 5.53C12.5 13.6 17.8 9.5 24 9.5z"/>
+            <path fill="#34A853" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.74H24v9h12.7c-.55 2.98-2.2 5.5-4.68 7.2l7.18 5.58C43.28 37.42 46.52 31.38 46.52 24.5z"/>
+            <path fill="#FBBC05" d="M10.81 28.28A14.6 14.6 0 0 1 9.5 24c0-1.5.26-2.95.71-4.28l-7.12-5.53A23.93 23.93 0 0 0 0 24c0 3.87.93 7.52 2.57 10.73l8.24-6.45z"/>
+            <path fill="#EA4335" d="M24 47c5.47 0 10.06-1.81 13.41-4.91l-7.18-5.58c-1.83 1.23-4.17 1.96-6.23 1.96-6.2 0-11.5-4.1-13.19-9.72l-8.24 6.45C7.07 41.52 14.82 47 24 47z"/>
+          </svg>
+          Sign up with Google
+        </button>
+      </div>
+    </div>
+
+    <div class="back-home"><a href="index.html">← Back to Home</a></div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="fp-overlay" id="fpModal">
+  <div class="fp-modal">
+    <div class="fp-header">
+      <h3 id="fpTitle">Reset Your Password</h3>
+      <button class="fp-close" onclick="closeForgotModal()">✕</button>
+    </div>
+    <div class="fp-body">
+      <div class="step-dots">
+        <div class="step-dot active" id="sd1"></div>
+        <div class="step-dot" id="sd2"></div>
+        <div class="step-dot" id="sd3"></div>
+      </div>
+
+      <!-- Step 1: Email/Phone -->
+      <div class="fp-step active" id="fpStep1">
+        <div id="fpAlert1"></div>
+        <p style="font-size:.85rem;color:var(--text-light);margin-bottom:16px;line-height:1.5">Enter your registered email or phone number. We will send a 6-digit OTP.</p>
+        <div class="form-group">
+          <label class="form-label">Email or Phone Number</label>
+          <input type="text" id="fpInput" class="form-control" placeholder="email@example.com or 9876543210"
+            onkeypress="if(event.key==='Enter')sendOTP()"/>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="sendOTP()" id="sendOTPBtn">
+          📩 Send OTP
+        </button>
+        <div style="text-align:center;margin-top:14px;font-size:.8rem;color:var(--text-light)">
+          No email? <a id="fpWaLink" href="#" target="_blank" style="color:#25D366;font-weight:600">📱 Reset via WhatsApp</a>
+        </div>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div class="fp-step" id="fpStep2">
+        <div id="fpAlert2"></div>
+        <p style="font-size:.85rem;color:var(--text-light);margin-bottom:4px">OTP sent to:</p>
+        <p style="font-weight:600;color:var(--blue-dark);margin-bottom:16px" id="fpEmailMasked"></p>
+        <div class="otp-row">
+          <input class="otp-box" type="text" maxlength="1" id="otp0" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)"/>
+          <input class="otp-box" type="text" maxlength="1" id="otp1" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)"/>
+          <input class="otp-box" type="text" maxlength="1" id="otp2" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)"/>
+          <input class="otp-box" type="text" maxlength="1" id="otp3" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)"/>
+          <input class="otp-box" type="text" maxlength="1" id="otp4" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)"/>
+          <input class="otp-box" type="text" maxlength="1" id="otp5" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)"/>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="verifyOTP()" id="verifyBtn">
+          ✅ Verify OTP
+        </button>
+        <div class="resend-row">
+          Didn't get OTP?
+          <button class="resend-btn" id="resendBtn" onclick="resendOTP()" disabled>
+            Resend in <span id="resendTimer">30</span>s
+          </button>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <button onclick="goFpStep(1)" style="background:none;border:none;color:var(--teal);font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif">
+            ← Change email
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: New Password -->
+      <div class="fp-step" id="fpStep3">
+        <div id="fpAlert3"></div>
+        <p style="font-size:.85rem;color:var(--text-light);margin-bottom:20px">OTP verified! Set your new password.</p>
+        <div class="form-group">
+          <label class="form-label">New Password *</label>
+          <div class="pass-wrap">
+            <input type="password" id="newPass" class="form-control" placeholder="Min 8 characters" oninput="checkStrength2(this.value)"/>
+            <button class="pass-toggle" onclick="togglePass('newPass',this)" type="button">👁️</button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill2"></div></div>
+          <div class="strength-text" id="strengthText2"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Password *</label>
+          <div class="pass-wrap">
+            <input type="password" id="confirmPass" class="form-control" placeholder="Re-enter new password"
+              onkeypress="if(event.key==='Enter')resetPassword()"/>
+            <button class="pass-toggle" onclick="togglePass('confirmPass',this)" type="button">👁️</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="resetPassword()" id="resetBtn">
+          🔒 Reset Password
+        </button>
+      </div>
+
+      <!-- Step 4: Success -->
+      <div class="fp-step" id="fpStep4">
+        <div class="success-box">
+          <div style="font-size:3.5rem;margin-bottom:12px">✅</div>
+          <h3 style="font-family:'Syne',sans-serif;color:var(--blue-dark);margin-bottom:8px">Password Reset!</h3>
+          <p style="color:var(--text-light);font-size:.88rem;margin-bottom:20px">Your password has been changed. You can now login.</p>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="closeForgotModal()">
+            Login Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//   CONFIG
+// ════════════════════════════════════════════════════════════════
+const API = Auth.API_BASE;
+const GOOGLE_CLIENT_ID = '581196414861-21t55989ef42lihbk38rjofm3dctvc8v.apps.googleusercontent.com';
+const FACEBOOK_APP_ID  = ''; // paste your Facebook App ID here when ready
+
+// Redirect if already logged in
+if (Auth.isLoggedIn()) {
+  window.location.href = Auth.isAdmin() ? 'admindashboard.html' : 'profile.html';
+}
+
+// ════════════════════════════════════════════════════════════════
+//   HELPERS
+// ════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register'));
+  });
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+}
+
+function togglePass(id, btn) {
+  const el = document.getElementById(id);
+  el.type  = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+
+function showAlert(id, msg, type='error') {
+  document.getElementById(id).innerHTML = '<div class="alert alert-'+type+'">'+msg+'</div>';
+}
+
+function checkStrength(p)  { updateStr(p, 'strengthFill',  'strengthText'); }
+function checkStrength2(p) { updateStr(p, 'strengthFill2', 'strengthText2'); }
+function updateStr(p, fid, tid) {
+  let s=0;
+  if(p.length>=8)s++; if(p.length>=12)s++;
+  if(/[A-Z]/.test(p))s++; if(/[0-9]/.test(p))s++; if(/[^A-Za-z0-9]/.test(p))s++;
+  const c=['','#e53e3e','#f97316','#f59e0b','#22c55e','#16a34a'];
+  const l=['','Weak','Fair','Good','Strong','Very Strong'];
+  document.getElementById(fid).style.width = s*20+'%';
+  document.getElementById(fid).style.background = c[s]||'';
+  document.getElementById(tid).textContent = p.length ? l[s] : '';
+  document.getElementById(tid).style.color = c[s]||'';
+}
+
+// After successful login — redirect correctly
+function doRedirect(user) {
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (redirect) { window.location.href = redirect; return; }
+  window.location.href = user.role === 'admin' ? 'admindashboard.html' : 'profile.html';
+}
+
+// ════════════════════════════════════════════════════════════════
+//   EMAIL / PASSWORD LOGIN
+// ════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) return showAlert('loginAlert', 'Please fill all fields');
+  const btn = document.getElementById('loginBtn');
+  btn.innerHTML = '<span class="spinner"></span> Logging in...';
+  btn.disabled  = true;
+  try {
+    await Auth.login(email, pass);
+    doRedirect(Auth.getUser());
+  } catch(e) {
+    showAlert('loginAlert', e.message);
+    btn.innerHTML = 'Login to Account';
+    btn.disabled  = false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//   REGISTER
+// ════════════════════════════════════════════════════════════════
+async function doRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass  = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  if (!name || !email || !pass) return showAlert('regAlert', 'Please fill all required fields');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert('regAlert', 'Invalid email address');
+  if (phone && !/^\d{10}$/.test(phone)) return showAlert('regAlert', 'Phone must be 10 digits');
+  if (pass !== pass2) return showAlert('regAlert', 'Passwords do not match');
+  if (pass.length < 8) return showAlert('regAlert', 'Password must be at least 8 characters');
+  const btn = document.getElementById('regBtn');
+  btn.innerHTML = '<span class="spinner"></span> Creating...';
+  btn.disabled  = true;
+  try {
+    await Auth.register(name, email, phone, pass);
+    doRedirect(Auth.getUser());
+  } catch(e) {
+    showAlert('regAlert', e.message);
+    btn.innerHTML = 'Create Account';
+    btn.disabled  = false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//   GOOGLE LOGIN — Fixed Implementation
+// ════════════════════════════════════════════════════════════════
+
+// Step 1: Initialize Google Identity Services after SDK loads
+function initGoogle() {
+  if (!window.google || !window.google.accounts) {
+    setTimeout(initGoogle, 200);
+    return;
+  }
+  try {
+    google.accounts.id.initialize({
+      client_id:             GOOGLE_CLIENT_ID,
+      callback:              handleGoogleResponse,  // called when user picks account
+      auto_select:           false,
+      cancel_on_tap_outside: true,
+      ux_mode:               'popup',               // use popup so it works on all browsers
+    });
+
+    // Render a hidden real Google button — we click it when user clicks our custom button
+    google.accounts.id.renderButton(
+      document.getElementById('googleBtnContainer'),
+      { theme: 'outline', size: 'large', width: 400 }
+    );
+
+    console.log('✅ Google Identity Services initialized');
+  } catch(e) {
+    console.error('Google init error:', e);
+  }
+}
+
+// Step 2: When user clicks our custom Google button — click the real hidden GSI button
+function signInWithGoogle() {
+  if (!window.google || !window.google.accounts) {
+    showToast('Google is still loading. Please wait 2 seconds and try again.', 'error');
+    return;
+  }
+
+  // Find the real Google button rendered by GSI and click it
+  const realBtn = document.querySelector('#googleBtnContainer iframe');
+  if (realBtn) {
+    // Click the iframe button directly
+    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+    document.querySelector('#googleBtnContainer div[role="button"]')?.dispatchEvent(clickEvent);
+    document.querySelector('#googleBtnContainer')?.querySelector('div')?.click();
+  }
+
+  // Also try One Tap as primary
+  google.accounts.id.prompt(function(notification) {
+    // One Tap was suppressed or not available — that's fine,
+    // the renderButton click above will handle it
+    if (notification.isNotDisplayed()) {
+      console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+    }
+  });
+}
+
+// Step 3: Google calls this with the credential after user picks their account
+async function handleGoogleResponse(response) {
+  if (!response || !response.credential) {
+    showToast('Google login failed — no credential received. Please try again.', 'error');
+    return;
+  }
+
+  // Show loading on button
+  const btn = document.getElementById('googleLoginBtn');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML  = '<span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:#1a73e8"></span> Signing in with Google...';
+    btn.disabled   = true;
+  }
+
+  try {
+    // Send credential to our backend
+    let lastError = null;
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      try {
+        const res = await fetch(API + '/auth/google', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ credential: response.credential }),
+        });
+
+        // Check if server returned HTML (sleeping on Render free tier)
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          if (btn) btn.innerHTML = '<span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:#1a73e8"></span> Server waking up... ('+(attempt*3)+'s)';
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Google login failed');
+
+        // ✅ Success — save session
+        localStorage.setItem('ppp_token', data.token);
+        localStorage.setItem('ppp_user',  JSON.stringify(data.user));
+        showToast('Welcome, ' + data.user.name + '! Signed in with Google ✅', 'success');
+
+        // Redirect after short delay
+        setTimeout(() => doRedirect(data.user), 800);
+        return;
+
+      } catch(fetchErr) {
+        lastError = fetchErr;
+        // Network error — server may be sleeping
+        if (fetchErr.name === 'TypeError') {
+          if (btn) btn.innerHTML = '<span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:#1a73e8"></span> Connecting... ('+(attempt*3)+'s)';
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+        throw fetchErr; // real error — don't retry
+      }
+    }
+    throw lastError || new Error('Server not responding. Please try again.');
+
+  } catch(e) {
+    showToast(e.message || 'Google login failed. Please try email/password.', 'error');
+    if (btn) {
+      btn.innerHTML = originalHtml;
+      btn.disabled  = false;
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//   FACEBOOK LOGIN
+// ════════════════════════════════════════════════════════════════
+function signInWithFacebook() {
+  if (!FACEBOOK_APP_ID) {
+    showToast('Facebook login is being set up. Please use Google login or email/password for now.', 'error');
+    return;
+  }
+  if (typeof FB === 'undefined') {
+    showToast('Facebook is loading... please try again in 2 seconds', 'error');
+    return;
+  }
+  FB.login(function(response) {
+    if (response.authResponse) {
+      handleFacebookResponse(response.authResponse);
+    } else {
+      showToast('Facebook login was cancelled', 'error');
+    }
+  }, { scope: 'email,public_profile' });
+}
+
+async function handleFacebookResponse(auth) {
+  const btn = document.getElementById('facebookLoginBtn');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<span class="spinner"></span> Signing in...'; btn.disabled = true; }
+  try {
+    const res  = await fetch(API + '/auth/facebook', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ accessToken: auth.accessToken, userID: auth.userID }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Facebook login failed');
+    localStorage.setItem('ppp_token', data.token);
+    localStorage.setItem('ppp_user',  JSON.stringify(data.user));
+    showToast('Welcome, ' + data.user.name + '! Signed in with Facebook ✅', 'success');
+    setTimeout(() => doRedirect(data.user), 800);
+  } catch(e) {
+    showToast(e.message || 'Facebook login failed', 'error');
+    if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//   FORGOT PASSWORD
+// ════════════════════════════════════════════════════════════════
+let resetToken = null, fpUserInput = '', resendInterval = null;
+
+function openForgotModal() {
+  resetToken = null; fpUserInput = '';
+  ['fpAlert1','fpAlert2','fpAlert3'].forEach(id => document.getElementById(id).innerHTML = '');
+  document.getElementById('fpInput').value    = '';
+  document.getElementById('newPass').value    = '';
+  document.getElementById('confirmPass').value = '';
+  for (let i = 0; i < 6; i++) { const b = document.getElementById('otp'+i); b.value = ''; b.classList.remove('filled'); }
+  goFpStep(1);
+  document.getElementById('fpModal').classList.add('open');
+  setTimeout(() => document.getElementById('fpInput').focus(), 300);
+}
+
+function closeForgotModal() {
+  document.getElementById('fpModal').classList.remove('open');
+  clearInterval(resendInterval);
+  // If reset was completed, prefill email field
+  if (fpUserInput && document.getElementById('fpStep4').classList.contains('active')) {
+    if (fpUserInput.includes('@')) document.getElementById('loginEmail').value = fpUserInput;
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function goFpStep(n) {
+  document.querySelectorAll('.fp-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('fpStep' + n).classList.add('active');
+  const titles = { 1:'Reset Your Password', 2:'Enter OTP', 3:'Set New Password', 4:'Password Reset!' };
+  document.getElementById('fpTitle').textContent = titles[n] || 'Reset Password';
+  for (let i = 1; i <= 3; i++) {
+    const d = document.getElementById('sd' + i);
+    if (i < n) { d.classList.remove('active'); d.classList.add('done'); }
+    else if (i === n) { d.classList.add('active'); d.classList.remove('done'); }
+    else { d.classList.remove('active', 'done'); }
+  }
+}
+
+async function sendOTP() {
+  const input = document.getElementById('fpInput').value.trim();
+  if (!input) { showAlert('fpAlert1', 'Please enter your email or phone'); return; }
+  fpUserInput = input;
+  const btn = document.getElementById('sendOTPBtn');
+  btn.innerHTML = '<span class="spinner"></span> Sending...';
+  btn.disabled  = true;
+  document.getElementById('fpAlert1').innerHTML = '';
+
+  for (let attempt = 1; attempt <= 10; attempt++) {
+    try {
+      const res = await fetch(API + '/auth/forgot-password', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email_or_phone: input }),
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        btn.innerHTML = '<span class="spinner"></span> Connecting ('+(attempt*3)+'s)...';
+        await new Promise(r => setTimeout(r, 3000));
+        continue;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+
+      document.getElementById('fpEmailMasked').textContent = data.email_masked || input;
+      goFpStep(2);
+      setTimeout(() => document.getElementById('otp0').focus(), 200);
+      startResend();
+
+      if (data.debug_otp) {
+        // Email not configured — show OTP on screen
+        document.getElementById('fpAlert2').innerHTML =
+          '<div style="background:#fff3cd;border:1.5px solid #ffc107;border-radius:10px;padding:14px;margin-bottom:12px;font-size:.85rem">' +
+          '<div style="font-weight:700;color:#856404;margin-bottom:8px">⚠️ Email not set up — here is your OTP:</div>' +
+          '<div style="font-size:2rem;font-weight:800;letter-spacing:10px;color:#0d2c6b;text-align:center;padding:8px 0">' + data.debug_otp + '</div>' +
+          '<div style="color:#856404;margin-top:6px;font-size:.78rem">Add EMAIL_USER and EMAIL_PASS in Render environment to enable email OTP.</div>' +
+          '</div>';
+        // Auto-fill OTP boxes
+        data.debug_otp.toString().split('').forEach((d, i) => {
+          const box = document.getElementById('otp' + i);
+          if (box) { box.value = d; box.classList.add('filled'); }
+        });
+      } else {
+        document.getElementById('fpAlert2').innerHTML =
+          '<div class="alert alert-success" style="margin-bottom:12px">✅ OTP sent! Check your email inbox and spam folder.</div>';
+      }
+      break;
+    } catch(e) {
+      if (attempt === 10) showAlert('fpAlert1', e.message);
+      else await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  btn.innerHTML = '📩 Send OTP';
+  btn.disabled  = false;
+}
+
+function startResend() {
+  let s = 30;
+  const btn = document.getElementById('resendBtn');
+  const timer = document.getElementById('resendTimer');
+  btn.disabled = true;
+  clearInterval(resendInterval);
+  resendInterval = setInterval(() => {
+    s--;
+    if (s <= 0) { clearInterval(resendInterval); btn.disabled = false; btn.textContent = 'Resend OTP'; return; }
+    timer.textContent = s;
+    btn.textContent = 'Resend in ' + s + 's';
+  }, 1000);
+}
+
+function resendOTP() {
+  for (let i = 0; i < 6; i++) { const b = document.getElementById('otp'+i); b.value = ''; b.classList.remove('filled'); }
+  document.getElementById('fpAlert2').innerHTML = '';
+  sendOTP();
+  goFpStep(2);
+  setTimeout(() => document.getElementById('otp0').focus(), 200);
+}
+
+function otpInput(el, idx) {
+  el.value = el.value.replace(/\D/, '').slice(-1);
+  el.classList.toggle('filled', el.value !== '');
+  if (el.value && idx < 5) document.getElementById('otp'+(idx+1)).focus();
+  if (getOTP().length === 6) setTimeout(verifyOTP, 200);
+}
+
+function otpKey(e, idx) {
+  if (e.key === 'Backspace' && !document.getElementById('otp'+idx).value && idx > 0) {
+    document.getElementById('otp'+(idx-1)).focus();
+  }
+}
+
+function getOTP() {
+  let o = '';
+  for (let i = 0; i < 6; i++) o += document.getElementById('otp'+i).value;
+  return o;
+}
+
+async function verifyOTP() {
+  const otp = getOTP();
+  if (otp.length !== 6) { showAlert('fpAlert2', 'Please enter all 6 digits'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.innerHTML = '<span class="spinner"></span> Verifying...';
+  btn.disabled  = true;
+  try {
+    const res = await fetch(API + '/auth/verify-otp', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email_or_phone: fpUserInput, otp }),
+    });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('Server not ready. Please try again.');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'OTP verification failed');
+    resetToken = data.reset_token;
+    clearInterval(resendInterval);
+    goFpStep(3);
+    setTimeout(() => document.getElementById('newPass').focus(), 200);
+  } catch(e) {
+    showAlert('fpAlert2', e.message);
+    for (let i = 0; i < 6; i++) {
+      const b = document.getElementById('otp'+i);
+      b.style.borderColor = 'var(--red)';
+      b.value = '';
+      b.classList.remove('filled');
+    }
+    setTimeout(() => { for (let i = 0; i < 6; i++) document.getElementById('otp'+i).style.borderColor = ''; }, 800);
+    document.getElementById('otp0').focus();
+  }
+  btn.innerHTML = '✅ Verify OTP';
+  btn.disabled  = false;
+}
+
+async function resetPassword() {
+  const newP  = document.getElementById('newPass').value;
+  const confP = document.getElementById('confirmPass').value;
+  if (!newP) return showAlert('fpAlert3', 'Please enter a new password');
+  if (newP.length < 8) return showAlert('fpAlert3', 'Password must be at least 8 characters');
+  if (newP !== confP) return showAlert('fpAlert3', 'Passwords do not match');
+  if (!resetToken) { showAlert('fpAlert3', 'Session expired. Please start again.'); goFpStep(1); return; }
+  const btn = document.getElementById('resetBtn');
+  btn.innerHTML = '<span class="spinner"></span> Resetting...';
+  btn.disabled  = true;
+  try {
+    const res = await fetch(API + '/auth/reset-password', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ reset_token: resetToken, new_password: newP }),
+    });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('Server not ready. Please try again.');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Reset failed');
+    resetToken = null;
+    goFpStep(4);
+  } catch(e) { showAlert('fpAlert3', e.message); }
+  btn.innerHTML = '🔒 Reset Password';
+  btn.disabled  = false;
+}
+
+// Close modal when clicking outside
+document.getElementById('fpModal').addEventListener('click', function(e) {
+  if (e.target === this) closeForgotModal();
+});
+
+// Initialize Google when page loads
+window.addEventListener('load', initGoogle);
+</script>
+
+<!-- Load Facebook SDK only if App ID is set -->
+<script>
+if (typeof FACEBOOK_APP_ID !== 'undefined' && FACEBOOK_APP_ID) {
+  window.fbAsyncInit = function() {
+    FB.init({ appId: FACEBOOK_APP_ID, cookie: true, xfbml: true, version: 'v18.0' });
+  };
+  (function(d,s,id){
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = 'https://connect.facebook.net/en_US/sdk.js';
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+}
+</script>
+</body>
+</html>

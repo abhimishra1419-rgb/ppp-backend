@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Contact Us – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .contact-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+    .contact-info-card{background:linear-gradient(135deg,var(--blue-dark),var(--blue-mid));color:#fff;border-radius:20px;padding:36px}
+    .contact-info-card h2{font-family:'Syne',sans-serif;font-size:1.5rem;margin-bottom:8px}
+    .contact-info-card p{opacity:.8;font-size:.9rem;margin-bottom:28px;line-height:1.6}
+    .info-item{display:flex;gap:16px;margin-bottom:24px}
+    .info-icon{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+    .info-label{font-size:.72rem;opacity:.65;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+    .info-value{font-size:.95rem;font-weight:600}
+    .info-value a{color:#fff;text-decoration:none}
+    .info-value a:hover{color:var(--teal)}
+    .social-links{display:flex;gap:12px;margin-top:28px}
+    .social-btn{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;text-decoration:none;transition:.2s}
+    .social-btn:hover{background:rgba(255,255,255,.3)}
+    .contact-form-card{background:#fff;border-radius:20px;box-shadow:var(--card-shadow);padding:36px}
+    .contact-form-card h2{font-family:'Syne',sans-serif;font-size:1.3rem;color:var(--blue-dark);margin-bottom:24px}
+    .subject-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+    .chip{padding:7px 14px;border-radius:30px;border:1.5px solid var(--grey-2);font-size:.78rem;font-weight:600;cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif;background:#fff}
+    .chip.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark)}
+    .faq-section{margin-top:48px}
+    .faq-item{border:1.5px solid var(--grey-1);border-radius:12px;margin-bottom:10px;overflow:hidden}
+    .faq-q{padding:16px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.9rem;background:#fff}
+    .faq-q:hover{background:var(--grey-1)}
+    .faq-arrow{transition:.3s;font-size:.8rem}
+    .faq-a{display:none;padding:0 20px 16px;font-size:.85rem;color:var(--text-light);line-height:1.7;background:#fff}
+    .faq-a.open{display:block}
+    @media(max-width:768px){.contact-layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Contact Us</h1>
+    <div class="breadcrumb"><a href="index.html">Home</a> &rarr; Contact Us</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="contact-layout">
+
+    <!-- Info Card — loaded from settings -->
+    <div class="contact-info-card">
+      <h2>Get in Touch</h2>
+      <p>We're here to help with your printer parts queries. Contact us via WhatsApp for the fastest response.</p>
+      <div class="info-item">
+        <div class="info-icon">📱</div>
+        <div>
+          <div class="info-label">WhatsApp (Fastest)</div>
+          <div class="info-value"><a href="#" id="waLink">Loading...</a></div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">📞</div>
+        <div>
+          <div class="info-label">Phone</div>
+          <div class="info-value"><a href="#" id="phoneLink">Loading...</a></div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">📧</div>
+        <div>
+          <div class="info-label">Email</div>
+          <div class="info-value"><a href="#" id="emailLink">Loading...</a></div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">📍</div>
+        <div>
+          <div class="info-label">Address</div>
+          <div class="info-value" id="addressText">Loading...</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">🕐</div>
+        <div>
+          <div class="info-label">Working Hours</div>
+          <div class="info-value" id="hoursText">Loading...</div>
+        </div>
+      </div>
+      <div class="social-links">
+        <a href="#" id="socialWA"  class="social-btn" title="WhatsApp">💬</a>
+        <a href="#" class="social-btn" title="Facebook">📘</a>
+        <a href="#" class="social-btn" title="Instagram">📸</a>
+        <a href="#" class="social-btn" title="YouTube">📺</a>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="contact-form-card">
+      <h2>Send Us a Message</h2>
+      <div id="contactAlert"></div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">What's your query about?</div>
+        <div class="subject-chips">
+          <button class="chip active" onclick="selectChip(this)">Order Status</button>
+          <button class="chip" onclick="selectChip(this)">Product Query</button>
+          <button class="chip" onclick="selectChip(this)">Returns</button>
+          <button class="chip" onclick="selectChip(this)">Wholesale</button>
+          <button class="chip" onclick="selectChip(this)">Other</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input type="text" id="cName" class="form-control" placeholder="Full Name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" id="cPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="cEmail" class="form-control" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input type="text" id="cSubject" class="form-control" placeholder="e.g. Enquiry about HP 104A drum unit"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message *</label>
+        <textarea id="cMessage" class="form-control" rows="4" placeholder="Describe your query in detail..."></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="sendMessage()" id="sendBtn">
+        📩 Send Message
+      </button>
+      <div style="text-align:center;margin-top:14px;font-size:.82rem;color:var(--text-light)">
+        Or directly WhatsApp us for instant reply:<br/>
+        <a id="waDirectLink" href="#" style="color:var(--teal);font-weight:600">📱 Chat on WhatsApp</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <h2 class="section-title" style="text-align:center;margin-bottom:28px">Frequently Asked <span>Questions</span></h2>
+    <div style="max-width:760px;margin:0 auto">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>Do you provide warranty on printer parts?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">Yes! All new original parts come with a 7-day replacement guarantee. Refurbished parts carry a 3-day check guarantee. If the part is defective on arrival, we replace it free of charge.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>How long does delivery take?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">Orders are dispatched within 24 hours (Mon–Sat). Delivery typically takes 3–5 business days for most locations in India. Metro cities (Delhi, Mumbai, Bangalore) usually receive orders in 2–3 days.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>Are GST invoices provided?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">Yes, we provide proper GST tax invoices for all orders. All listed prices are exclusive of 18% GST. The invoice will be included in your shipment and also emailed to you.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>Do you offer bulk/wholesale pricing?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">Yes! We offer special pricing for bulk orders (10+ units) and for service centers/resellers. Please WhatsApp us with your requirements for a custom quote.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>How do I return a wrong or defective item?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">Contact us within 7 days of delivery via WhatsApp with your order number and photos of the defective product. We will arrange a free pickup and replacement within 2–3 business days.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>What payment methods do you accept?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">We accept all online payment methods — UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, Net Banking, and Wallets via Razorpay. We also offer Cash on Delivery (COD) for most pin codes across India.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFAQ(this)"><span>How can I track my order?</span><span class="faq-arrow">▼</span></div>
+        <div class="faq-a">After your order is shipped, you will receive a tracking number. You can track your order on our Track Order page or directly on the courier website. You can also WhatsApp us with your order number for instant updates.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+const API = Auth.API_BASE;
+document.getElementById('headerMount').innerHTML = renderHeader('contact');
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+// Load contact details from settings (so admin can change them)
+async function loadContactSettings() {
+  try {
+    let attempts = 0;
+    while (attempts < 15) {
+      attempts++;
+      try {
+        const res = await fetch(API + '/settings', { cache: 'no-store' });
+        const ct  = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('not ready');
+        const s   = await res.json();
+        const wa  = s.whatsapp_number || '';
+        const email = s.footer_email  || '';
+        const addr  = s.footer_address || '';
+        const hours = s.working_hours  || 'Mon–Sat: 10:00 AM – 7:00 PM';
+        // Update all contact info from settings
+        document.getElementById('waLink').textContent    = '+91 ' + wa;
+        document.getElementById('waLink').href           = 'https://wa.me/91' + wa;
+        document.getElementById('phoneLink').textContent = '+91 ' + wa;
+        document.getElementById('phoneLink').href        = 'tel:+91' + wa;
+        document.getElementById('emailLink').textContent = email;
+        document.getElementById('emailLink').href        = 'mailto:' + email;
+        document.getElementById('addressText').textContent = addr;
+        document.getElementById('hoursText').textContent   = hours;
+        document.getElementById('socialWA').href           = 'https://wa.me/91' + wa;
+        document.getElementById('waDirectLink').href       = 'https://wa.me/91' + wa + '?text=Hi, I need help with...';
+        document.getElementById('waDirectLink').textContent = '📱 Chat on WhatsApp (+91 ' + wa + ')';
+        return;
+      } catch(e) {
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
+  } catch(e) {
+    // Fallback defaults if settings fail
+    const wa = '';
+    document.getElementById('waLink').textContent    = '+91 ' + wa;
+    document.getElementById('waLink').href           = 'https://wa.me/91' + wa;
+    document.getElementById('phoneLink').textContent = '+91 ' + wa;
+    document.getElementById('phoneLink').href        = 'tel:+91' + wa;
+    document.getElementById('emailLink').textContent = '';
+    document.getElementById('emailLink').href        = 'mailto:';
+    document.getElementById('addressText').textContent = '';
+    document.getElementById('hoursText').textContent   = 'Mon–Sat: 10:00 AM – 7:00 PM';
+    document.getElementById('socialWA').href           = 'https://wa.me/91' + wa;
+    document.getElementById('waDirectLink').href       = 'https://wa.me/91' + wa + '?text=Hi, I need help...';
+    document.getElementById('waDirectLink').textContent = '📱 Chat on WhatsApp';
+  }
+}
+
+function selectChip(btn) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cSubject').value = btn.textContent.trim() + ' Enquiry';
+}
+
+function toggleFAQ(el) {
+  const ans   = el.nextElementSibling;
+  const arrow = el.querySelector('.faq-arrow');
+  const isOpen = ans.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-arrow').forEach(a => a.style.transform = '');
+  if (!isOpen) { ans.classList.add('open'); arrow.style.transform = 'rotate(180deg)'; }
+}
+
+async function sendMessage() {
+  const name    = document.getElementById('cName').value.trim();
+  const phone   = document.getElementById('cPhone').value.trim();
+  const email   = document.getElementById('cEmail').value.trim();
+  const message = document.getElementById('cMessage').value.trim();
+  const subject = document.getElementById('cSubject').value.trim();
+
+  if (!name) { document.getElementById('contactAlert').innerHTML = '<div class="alert alert-error">Please enter your name</div>'; return; }
+  if (!phone || phone.length !== 10 || !/^\d+$/.test(phone)) { document.getElementById('contactAlert').innerHTML = '<div class="alert alert-error">Please enter a valid 10-digit phone number</div>'; return; }
+  if (!message) { document.getElementById('contactAlert').innerHTML = '<div class="alert alert-error">Please enter your message</div>'; return; }
+
+  const btn = document.getElementById('sendBtn');
+  btn.innerHTML = '<span class="spinner"></span> Sending...'; btn.disabled = true;
+  document.getElementById('contactAlert').innerHTML = '';
+
+  let attempts = 0;
+  while (attempts < 15) {
+    attempts++;
+    try {
+      const res = await fetch(API + '/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, message: (subject ? '['+subject+'] ' : '') + message }),
+      });
+      const ct   = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) throw new Error('not ready');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send');
+      document.getElementById('contactAlert').innerHTML =
+        '<div class="alert alert-success">✅ ' + (data.message || 'Message sent! We will contact you within 24 hours.') + '</div>';
+      document.getElementById('cName').value    = '';
+      document.getElementById('cPhone').value   = '';
+      document.getElementById('cEmail').value   = '';
+      document.getElementById('cSubject').value = '';
+      document.getElementById('cMessage').value = '';
+      btn.innerHTML = '📩 Send Message'; btn.disabled = false;
+      return;
+    } catch(e) {
+      if (e.message !== 'not ready') {
+        document.getElementById('contactAlert').innerHTML = '<div class="alert alert-error">❌ ' + e.message + '. Please try WhatsApp instead.</div>';
+        btn.innerHTML = '📩 Send Message'; btn.disabled = false;
+        return;
+      }
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  document.getElementById('contactAlert').innerHTML = '<div class="alert alert-error">Server not responding. Please WhatsApp us directly.</div>';
+  btn.innerHTML = '📩 Send Message'; btn.disabled = false;
+}
+
+loadContactSettings();
+</script>
+</body>
+</html>

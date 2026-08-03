@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Profile – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body { display:flex; min-height:100vh; flex-direction:column; }
+    .admin-wrap { display:flex; flex:1; }
+    .admin-sidebar { width:240px; background:var(--blue-dark); color:#fff; flex-shrink:0; min-height:100vh; display:flex; flex-direction:column; }
+    .sidebar-logo { padding:20px 18px; border-bottom:1px solid rgba(255,255,255,.1); }
+    .sidebar-logo strong { font-family:'Syne',sans-serif; font-size:.95rem; display:block; }
+    .sidebar-logo span { font-size:.7rem; opacity:.55; }
+    .admin-nav { flex:1; padding:10px 0; }
+    .admin-nav a { display:flex; align-items:center; gap:10px; padding:11px 18px; color:rgba(255,255,255,.75); text-decoration:none; font-size:.84rem; transition:.2s; }
+    .admin-nav a:hover, .admin-nav a.active { background:rgba(255,255,255,.12); color:#fff; }
+    .admin-nav a.active { border-left:3px solid var(--teal); }
+    .admin-nav .sec { font-size:.65rem; text-transform:uppercase; letter-spacing:.12em; opacity:.45; padding:14px 18px 4px; }
+    .sidebar-bottom { padding:14px 18px; border-top:1px solid rgba(255,255,255,.1); }
+    .sidebar-bottom a { color:rgba(255,255,255,.55); text-decoration:none; font-size:.82rem; display:block; margin-bottom:6px; }
+    .admin-main { flex:1; overflow-x:hidden; background:var(--off-white); }
+    .admin-topbar { background:#fff; border-bottom:1px solid var(--grey-1); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; flex-wrap:wrap; gap:10px; }
+    .admin-topbar h2 { font-family:'Syne',sans-serif; font-size:1.05rem; color:var(--blue-dark); margin:0; }
+    .admin-content { padding:28px; max-width:900px; }
+
+    .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .pcard { background:#fff; border-radius:16px; box-shadow:var(--card-shadow); overflow:hidden; }
+    .pcard-header { background:linear-gradient(135deg,var(--blue-dark),var(--blue-mid)); color:#fff; padding:20px 24px; }
+    .pcard-header h3 { font-family:'Syne',sans-serif; font-size:1rem; margin:0 0 4px; }
+    .pcard-header p { font-size:.78rem; opacity:.75; margin:0; }
+    .pcard-body { padding:24px; }
+
+    /* Avatar circle */
+    .avatar-area { text-align:center; margin-bottom:24px; }
+    .avatar-big { width:88px; height:88px; border-radius:50%; background:var(--blue-dark); margin:0 auto 12px; display:flex; align-items:center; justify-content:center; font-size:2.2rem; font-weight:800; color:#fff; font-family:'Syne',sans-serif; border:4px solid var(--teal); }
+    .avatar-name { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--blue-dark); }
+    .avatar-email { font-size:.82rem; color:var(--text-light); margin-top:3px; }
+    .avatar-badge { display:inline-block; background:var(--teal); color:#fff; font-size:.72rem; font-weight:700; padding:3px 12px; border-radius:20px; margin-top:8px; }
+
+    /* Info display cards */
+    .info-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--grey-1); }
+    .info-row:last-child { border-bottom:none; }
+    .info-label { font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-light); font-weight:600; }
+    .info-val { font-size:.9rem; font-weight:600; color:var(--text); }
+
+    /* Password strength */
+    .strength-bar { height:4px; border-radius:2px; background:var(--grey-2); margin-top:6px; overflow:hidden; }
+    .strength-fill { height:100%; width:0%; transition:width .3s, background .3s; border-radius:2px; }
+    .strength-text { font-size:.72rem; margin-top:4px; }
+
+    .pass-wrap { position:relative; }
+    .pass-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; }
+
+    .security-tip { background:var(--grey-1); border-radius:10px; padding:12px 14px; font-size:.8rem; color:var(--text-light); line-height:1.6; margin-top:16px; }
+    .security-tip strong { color:var(--text); }
+
+    @media(max-width:900px) { .admin-sidebar { display:none; } .profile-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="admin-wrap">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo"><strong>Printer Spare Parts</strong><span>Admin Panel</span></div>
+    <nav class="admin-nav">
+      <div class="sec">Main</div>
+      <a href="admindashboard.html">📊 Dashboard</a>
+      <a href="adminorder.html">📦 Orders</a>
+      <a href="adminproduct.html">🛒 Products</a>
+      <div class="sec">Settings</div>
+      <a href="admincontrol.html">🔧 Full Control</a>
+      <a href="adminsetting.html">⚙️ Website Settings</a>
+      <a href="adminprofile.html" class="active">👤 My Profile</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="index.html" target="_blank">🌐 View Store</a>
+      <a href="#" onclick="Auth.logout()" style="color:#f87171">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h2>👤 My Admin Profile</h2>
+      <a href="admindashboard.html" class="btn btn-outline btn-sm">← Dashboard</a>
+    </div>
+
+    <div class="admin-content">
+      <div id="pageAlert"></div>
+
+      <div class="profile-grid">
+
+        <!-- LEFT: Profile overview + Edit details -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Avatar Card -->
+          <div class="pcard">
+            <div class="pcard-body">
+              <div class="avatar-area">
+                <div class="avatar-big" id="avatarInitial">A</div>
+                <div class="avatar-name" id="displayName">Loading...</div>
+                <div class="avatar-email" id="displayEmail">Loading...</div>
+                <div class="avatar-badge">Admin</div>
+              </div>
+              <div id="infoRows">
+                <div class="info-row">
+                  <span class="info-label">Name</span>
+                  <span class="info-val" id="infoName">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Email / Login ID</span>
+                  <span class="info-val" id="infoEmail">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Phone</span>
+                  <span class="info-val" id="infoPhone">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Account Since</span>
+                  <span class="info-val" id="infoJoined">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Role</span>
+                  <span class="info-val"><span class="badge badge-success">Admin</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit Profile Card -->
+          <div class="pcard">
+            <div class="pcard-header">
+              <h3>✏️ Edit Profile Details</h3>
+              <p>Change your name, login email or phone number</p>
+            </div>
+            <div class="pcard-body">
+              <div id="profileAlert"></div>
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="adminName" class="form-control" placeholder="Your full name"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Login Email (used to sign in)</label>
+                <input type="email" id="adminEmail" class="form-control" placeholder="admin@yourdomain.com"/>
+                <div class="form-hint">⚠️ Changing email changes your login ID. You will need to use the new email to sign in.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" id="adminPhone" class="form-control" placeholder="10-digit number" maxlength="10"/>
+              </div>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="saveProfile()">
+                💾 Save Profile Changes
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Change password -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Change Password Card -->
+          <div class="pcard">
+            <div class="pcard-header" style="background:linear-gradient(135deg,#1a1a2e,#16213e)">
+              <h3>🔒 Change Password</h3>
+              <p>Use a strong password to keep your admin account secure</p>
+            </div>
+            <div class="pcard-body">
+              <div id="passwordAlert"></div>
+
+              <div class="form-group">
+                <label class="form-label">Current Password *</label>
+                <div class="pass-wrap">
+                  <input type="password" id="currentPass" class="form-control" placeholder="Enter your current password"/>
+                  <button class="pass-toggle" onclick="togglePass('currentPass',this)" type="button">👁️</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">New Password *</label>
+                <div class="pass-wrap">
+                  <input type="password" id="newPass" class="form-control" placeholder="Min 8 characters" oninput="checkStrength(this.value)"/>
+                  <button class="pass-toggle" onclick="togglePass('newPass',this)" type="button">👁️</button>
+                </div>
+                <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                <div class="strength-text" id="strengthText"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Confirm New Password *</label>
+                <div class="pass-wrap">
+                  <input type="password" id="confirmPass" class="form-control" placeholder="Re-enter new password"/>
+                  <button class="pass-toggle" onclick="togglePass('confirmPass',this)" type="button">👁️</button>
+                </div>
+              </div>
+
+              <button class="btn btn-dark" style="width:100%;justify-content:center;padding:13px" onclick="changePassword()">
+                🔐 Update Password
+              </button>
+
+              <div class="security-tip">
+                <strong>Tips for a strong password:</strong><br/>
+                ✅ At least 8 characters<br/>
+                ✅ Mix of uppercase + lowercase letters<br/>
+                ✅ Include numbers and symbols (@, #, !)<br/>
+                ✅ Never share your password with anyone
+              </div>
+            </div>
+          </div>
+
+          <!-- Login Info Card -->
+          <div class="pcard">
+            <div class="pcard-header" style="background:linear-gradient(135deg,#064e3b,#065f46)">
+              <h3>🛡️ Login Information</h3>
+              <p>Your current admin login credentials</p>
+            </div>
+            <div class="pcard-body">
+              <div class="info-row">
+                <span class="info-label">Login URL</span>
+                <span class="info-val" style="font-size:.78rem;word-break:break-all" id="loginUrl">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Login Email</span>
+                <span class="info-val" id="loginEmail">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Password</span>
+                <span class="info-val">••••••••</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Session</span>
+                <span class="info-val"><span class="badge badge-success">Active — 30 days</span></span>
+              </div>
+              <div style="margin-top:16px">
+                <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="Auth.logout()">
+                  🚪 Logout from all devices
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAdmin();
+const API = Auth.API_BASE;
+
+// ── Load admin profile ────────────────────────────────────────
+async function loadProfile() {
+  try {
+    let attempts = 0;
+    while (attempts < 15) {
+      attempts++;
+      try {
+        const res = await Auth.authFetch('/admin/profile');
+        const ct  = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('not ready');
+        const u   = await res.json();
+        renderProfile(u);
+        return;
+      } catch(e) {
+        if (e.message === 'not ready') {
+          await new Promise(r => setTimeout(r, 3000));
+        } else {
+          // Fallback to stored user
+          const u = Auth.getUser();
+          if (u) renderProfile(u);
+          return;
+        }
+      }
+    }
+  } catch(e) {
+    const u = Auth.getUser();
+    if (u) renderProfile(u);
+  }
+}
+
+function renderProfile(u) {
+  const name    = u.name  || 'Admin';
+  const email   = u.email || '';
+  const phone   = u.phone || '';
+  const initial = name.charAt(0).toUpperCase();
+  const joined  = u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' }) : '—';
+
+  // Avatar
+  document.getElementById('avatarInitial').textContent = initial;
+  document.getElementById('displayName').textContent   = name;
+  document.getElementById('displayEmail').textContent  = email;
+
+  // Info rows
+  document.getElementById('infoName').textContent   = name;
+  document.getElementById('infoEmail').textContent  = email;
+  document.getElementById('infoPhone').textContent  = phone || 'Not set';
+  document.getElementById('infoJoined').textContent = joined;
+
+  // Login info
+  document.getElementById('loginUrl').textContent   = window.location.origin + '/login.html';
+  document.getElementById('loginEmail').textContent = email;
+
+  // Pre-fill edit form
+  document.getElementById('adminName').value  = name;
+  document.getElementById('adminEmail').value = email;
+  document.getElementById('adminPhone').value = phone;
+}
+
+// ── Save profile changes ──────────────────────────────────────
+async function saveProfile() {
+  const name  = document.getElementById('adminName').value.trim();
+  const email = document.getElementById('adminEmail').value.trim();
+  const phone = document.getElementById('adminPhone').value.trim();
+
+  if (!name)  { showAlert('profileAlert', 'Name cannot be empty'); return; }
+  if (!email) { showAlert('profileAlert', 'Email cannot be empty'); return; }
+  if (phone && !/^\d{10}$/.test(phone)) { showAlert('profileAlert', 'Phone must be 10 digits'); return; }
+
+  const btn = document.querySelector('[onclick="saveProfile()"]');
+  btn.innerHTML = '<span class="spinner"></span> Saving...'; btn.disabled = true;
+
+  try {
+    const res  = await Auth.authFetch('/admin/profile', {
+      method: 'PUT',
+      body:   JSON.stringify({ name, email, phone }),
+    });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+
+    // Update stored token if email changed (new token returned)
+    if (data.token) {
+      localStorage.setItem('ppp_token', data.token);
+    }
+    // Update stored user
+    const stored = Auth.getUser() || {};
+    localStorage.setItem('ppp_user', JSON.stringify({ ...stored, name, email }));
+
+    renderProfile(data.user || { name, email, phone });
+
+    document.getElementById('profileAlert').innerHTML =
+      '<div class="alert alert-success">✅ Profile updated successfully!' +
+      (data.token ? ' Your login email has been changed to <strong>' + email + '</strong>.' : '') +
+      '</div>';
+    setTimeout(() => document.getElementById('profileAlert').innerHTML = '', 4000);
+    showToast('Profile saved!', 'success');
+  } catch(e) {
+    showAlert('profileAlert', e.message);
+  }
+  btn.innerHTML = '💾 Save Profile Changes'; btn.disabled = false;
+}
+
+// ── Change password ───────────────────────────────────────────
+async function changePassword() {
+  const current = document.getElementById('currentPass').value;
+  const newP    = document.getElementById('newPass').value;
+  const confirm = document.getElementById('confirmPass').value;
+
+  if (!current) { showAlert('passwordAlert', 'Please enter your current password'); return; }
+  if (!newP)    { showAlert('passwordAlert', 'Please enter a new password'); return; }
+  if (newP.length < 8) { showAlert('passwordAlert', 'New password must be at least 8 characters'); return; }
+  if (newP !== confirm) { showAlert('passwordAlert', 'New passwords do not match'); return; }
+  if (current === newP) { showAlert('passwordAlert', 'New password must be different from current password'); return; }
+
+  const btn = document.querySelector('[onclick="changePassword()"]');
+  btn.innerHTML = '<span class="spinner"></span> Updating...'; btn.disabled = true;
+
+  try {
+    const res  = await Auth.authFetch('/admin/password', {
+      method: 'PUT',
+      body:   JSON.stringify({
+        current_password: current,
+        new_password:     newP,
+        confirm_password: confirm,
+      }),
+    });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error || 'Password change failed');
+
+    document.getElementById('passwordAlert').innerHTML =
+      '<div class="alert alert-success">✅ ' + data.message + '</div>';
+    document.getElementById('currentPass').value = '';
+    document.getElementById('newPass').value     = '';
+    document.getElementById('confirmPass').value = '';
+    document.getElementById('strengthFill').style.width = '0%';
+    document.getElementById('strengthText').textContent = '';
+
+    showToast('Password changed! Please login again.', 'success');
+
+    // Auto logout after 3 seconds since password changed
+    setTimeout(() => {
+      Auth.logout();
+    }, 3000);
+
+  } catch(e) {
+    showAlert('passwordAlert', e.message);
+  }
+  btn.innerHTML = '🔐 Update Password'; btn.disabled = false;
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function showAlert(id, msg, type = 'error') {
+  document.getElementById(id).innerHTML = '<div class="alert alert-' + type + '">' + msg + '</div>';
+}
+
+function togglePass(id, btn) {
+  const el = document.getElementById(id);
+  el.type  = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+
+function checkStrength(p) {
+  let s = 0;
+  if (p.length >= 8)           s++;
+  if (p.length >= 12)          s++;
+  if (/[A-Z]/.test(p))         s++;
+  if (/[0-9]/.test(p))         s++;
+  if (/[^A-Za-z0-9]/.test(p)) s++;
+  const c = ['','#e53e3e','#f97316','#f59e0b','#22c55e','#16a34a'];
+  const l = ['','Weak','Fair','Good','Strong','Very Strong'];
+  document.getElementById('strengthFill').style.width      = (s * 20) + '%';
+  document.getElementById('strengthFill').style.background = c[s] || '';
+  document.getElementById('strengthText').textContent      = p.length ? l[s] : '';
+  document.getElementById('strengthText').style.color      = c[s] || '';
+}
+
+// Init
+loadProfile();
+</script>
+</body>
+</html>

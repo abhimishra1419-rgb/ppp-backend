@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>My Account – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    .profile-layout{display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start}
+    .side-card{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);overflow:hidden;position:sticky;top:80px}
+    .user-hero{background:linear-gradient(135deg,var(--blue-dark),var(--blue-mid));padding:24px;text-align:center;color:#fff}
+    .avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid var(--teal);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700}
+    .user-name{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700}
+    .user-email{font-size:.72rem;opacity:.75;margin-top:3px}
+    .side-nav a,.side-nav button{display:flex;align-items:center;gap:10px;padding:12px 18px;font-size:.85rem;color:var(--text);text-decoration:none;border:none;background:none;width:100%;text-align:left;cursor:pointer;font-family:'DM Sans',sans-serif;border-left:3px solid transparent;transition:.15s}
+    .side-nav a:hover,.side-nav button:hover{background:var(--grey-1)}
+    .side-nav a.active,.side-nav button.active{background:var(--teal-light);color:var(--teal);border-left-color:var(--teal);font-weight:600}
+    .panel{display:none}.panel.active{display:block}
+    .pcard{background:#fff;border-radius:14px;box-shadow:var(--card-shadow);margin-bottom:14px;overflow:hidden}
+    .pcard-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--grey-1)}
+    .pcard-body{padding:14px 18px}
+    .pcard-footer{padding:12px 18px;border-top:1px solid var(--grey-1);display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .order-num{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--blue-dark)}
+    .order-date{font-size:.72rem;color:var(--text-light);margin-top:2px}
+    .status-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .items-preview{font-size:.78rem;color:var(--text-light);line-height:1.5;margin-bottom:8px}
+    .tracking-chip{display:inline-flex;align-items:center;gap:6px;background:var(--teal-light);border:1px solid var(--teal);border-radius:6px;padding:4px 10px;font-size:.75rem;color:var(--teal);font-weight:600;margin-top:4px}
+    .addr-card{background:#fff;border:1.5px solid var(--grey-2);border-radius:12px;padding:16px;margin-bottom:12px;position:relative}
+    .addr-card.default{border-color:var(--teal)}
+    .addr-default-badge{background:var(--teal);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:8px}
+    .review-stars{display:flex;gap:4px;margin-bottom:12px}
+    .star-btn{background:none;border:none;font-size:1.8rem;cursor:pointer;transition:transform .1s;padding:0}
+    .star-btn:hover{transform:scale(1.2)}
+    .empty-state{text-align:center;padding:48px 20px;color:var(--text-light)}
+    .empty-state h3{font-size:1rem;margin-bottom:8px;color:var(--text)}
+    @media(max-width:900px){.profile-layout{grid-template-columns:1fr}.side-card{position:static}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>My Account</h1>
+    <div class="breadcrumb"><a href="index.html">Home</a> &rarr; My Account</div>
+  </div>
+</div>
+
+<div class="section">
+  <div id="mainAlert"></div>
+  <div class="profile-layout">
+
+    <!-- Sidebar -->
+    <div class="side-card">
+      <div class="user-hero">
+        <div class="avatar" id="avatarEl">👤</div>
+        <div class="user-name" id="sidebarName">Loading...</div>
+        <div class="user-email" id="sidebarEmail"></div>
+      </div>
+      <div class="side-nav" style="padding:6px 0">
+        <button id="nb-orders"   class="active" onclick="show('orders',this)">📦 My Orders</button>
+        <button id="nb-wishlist" onclick="show('wishlist',this)">❤️ Wishlist</button>
+        <button id="nb-address"  onclick="show('address',this)">📍 Saved Addresses</button>
+        <button id="nb-profile"  onclick="show('profile',this)">👤 Edit Profile</button>
+        <button id="nb-password" onclick="show('password',this)">🔒 Change Password</button>
+        <a href="track.html">🔍 Track Order</a>
+        <button onclick="Auth.logout()" style="color:var(--red);border-top:1px solid var(--grey-1);margin-top:4px">🚪 Logout</button>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <div>
+
+      <!-- ORDERS -->
+      <div class="panel active" id="panel-orders">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <h2 class="section-title" style="margin:0">My <span>Orders</span></h2>
+          <a href="track.html" class="btn btn-outline btn-sm">🔍 Track by Order #</a>
+        </div>
+        <div id="ordersList"><div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Loading...</div></div>
+      </div>
+
+      <!-- ORDER DETAIL (sub-panel) -->
+      <div class="panel" id="panel-orderdetail">
+        <button class="btn btn-outline btn-sm" onclick="show('orders',document.getElementById('nb-orders'))" style="margin-bottom:16px">← Back to Orders</button>
+        <div id="orderDetailContent"></div>
+      </div>
+
+      <!-- WISHLIST -->
+      <div class="panel" id="panel-wishlist">
+        <h2 class="section-title" style="margin-bottom:20px">My <span>Wishlist</span></h2>
+        <div id="wishlistContent"><div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Loading...</div></div>
+      </div>
+
+      <!-- ADDRESSES -->
+      <div class="panel" id="panel-address">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <h2 class="section-title" style="margin:0">Saved <span>Addresses</span></h2>
+          <button class="btn btn-primary btn-sm" onclick="toggleAddressForm()">+ Add New Address</button>
+        </div>
+        <div id="addAddressForm" style="display:none;background:#fff;border-radius:14px;box-shadow:var(--card-shadow);padding:20px;margin-bottom:20px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.9rem;margin-bottom:16px">New Address</h3>
+          <div id="addrAlert"></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="aName" class="form-control"/></div><div class="form-group"><label class="form-label">Phone *</label><input type="tel" id="aPhone" class="form-control" maxlength="10"/></div></div>
+          <div class="form-group"><label class="form-label">Address Line *</label><input type="text" id="aLine" class="form-control" placeholder="House No, Street, Area, Landmark"/></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">City *</label><input type="text" id="aCity" class="form-control"/></div><div class="form-group"><label class="form-label">State *</label><select id="aState" class="form-control form-select"><option value="">Select State</option><option>Delhi</option><option>Uttar Pradesh</option><option>Maharashtra</option><option>Karnataka</option><option>Tamil Nadu</option><option>Gujarat</option><option>Rajasthan</option><option>West Bengal</option><option>Madhya Pradesh</option><option>Haryana</option><option>Punjab</option><option>Bihar</option><option>Andhra Pradesh</option><option>Telangana</option><option>Kerala</option></select></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">PIN Code *</label><input type="text" id="aPin" class="form-control" maxlength="6"/></div><div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:4px"><label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="aDefault" style="accent-color:var(--teal)"/> Set as default address</label></div></div>
+          <div style="display:flex;gap:10px"><button class="btn btn-primary" onclick="saveAddress()">Save Address</button><button class="btn btn-outline" onclick="toggleAddressForm()">Cancel</button></div>
+        </div>
+        <div id="addressList"><div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Loading...</div></div>
+      </div>
+
+      <!-- EDIT PROFILE -->
+      <div class="panel" id="panel-profile">
+        <h2 class="section-title" style="margin-bottom:20px">Edit <span>Profile</span></h2>
+        <div style="background:#fff;border-radius:14px;box-shadow:var(--card-shadow);padding:24px;max-width:480px">
+          <div id="profileAlert"></div>
+          <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="pName" class="form-control"/></div>
+          <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" id="pPhone" class="form-control" maxlength="10"/></div>
+          <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="pEmail" class="form-control" disabled/><div class="form-hint">Email cannot be changed</div></div>
+          <button class="btn btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+        </div>
+      </div>
+
+      <!-- CHANGE PASSWORD -->
+      <div class="panel" id="panel-password">
+        <h2 class="section-title" style="margin-bottom:20px">Change <span>Password</span></h2>
+        <div style="background:#fff;border-radius:14px;box-shadow:var(--card-shadow);padding:24px;max-width:420px">
+          <div id="passAlert"></div>
+          <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="oldPass" class="form-control"/></div>
+          <div class="form-group"><label class="form-label">New Password (min 8 characters)</label><input type="password" id="newPass" class="form-control"/></div>
+          <div class="form-group"><label class="form-label">Confirm New Password</label><input type="password" id="newPass2" class="form-control"/></div>
+          <button class="btn btn-primary" onclick="changePassword()">🔒 Update Password</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- CANCEL ORDER MODAL -->
+<div class="modal-overlay" id="cancelModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header" style="background:var(--red)"><h3>Cancel Order</h3><button class="modal-close" onclick="document.getElementById('cancelModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px;font-size:.88rem">Why are you cancelling this order?</p>
+      <select id="cancelReason" class="form-control form-select" style="margin-bottom:12px">
+        <option value="">Select reason</option>
+        <option>Ordered by mistake</option>
+        <option>Found better price elsewhere</option>
+        <option>Delivery time too long</option>
+        <option>Changed my mind</option>
+        <option>Duplicate order</option>
+        <option>Other</option>
+      </select>
+      <input type="text" id="cancelReasonOther" class="form-control" placeholder="Describe your reason (optional)" style="display:none"/>
+      <div class="alert alert-info" style="font-size:.8rem;margin-top:12px;margin-bottom:0">
+        ℹ️ Refund for online payments will be processed in 5–7 business days.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('cancelModal').classList.remove('open')">Keep Order</button>
+      <button class="btn btn-danger" onclick="confirmCancel()">Cancel Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- RETURN ORDER MODAL -->
+<div class="modal-overlay" id="returnModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><h3>Request Return</h3><button class="modal-close" onclick="document.getElementById('returnModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px;font-size:.88rem">Why are you returning this order?</p>
+      <select id="returnReason" class="form-control form-select" style="margin-bottom:12px">
+        <option value="">Select reason</option>
+        <option>Item is defective / damaged</option>
+        <option>Wrong item delivered</option>
+        <option>Item not as described</option>
+        <option>Missing parts / accessories</option>
+        <option>Changed my mind</option>
+      </select>
+      <div class="alert alert-info" style="font-size:.8rem;margin-top:12px;margin-bottom:0">
+        ℹ️ Our team will contact you within 24–48 hours to arrange pickup. Refund after inspection.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('returnModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReturn()">Submit Return Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3>Write a Review</h3><button class="modal-close" onclick="document.getElementById('reviewModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div id="reviewAlert"></div>
+      <p id="reviewProductName" style="font-weight:600;margin-bottom:12px;color:var(--blue-dark)"></p>
+      <div class="form-group">
+        <label class="form-label">Your Rating *</label>
+        <div class="review-stars" id="starButtons">
+          <button class="star-btn" onclick="setRating(1)">☆</button>
+          <button class="star-btn" onclick="setRating(2)">☆</button>
+          <button class="star-btn" onclick="setRating(3)">☆</button>
+          <button class="star-btn" onclick="setRating(4)">☆</button>
+          <button class="star-btn" onclick="setRating(5)">☆</button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Review Title</label><input type="text" id="reviewTitle" class="form-control" placeholder="Summarise your review"/></div>
+      <div class="form-group"><label class="form-label">Your Review *</label><textarea id="reviewComment" class="form-control" rows="4" placeholder="Tell others about your experience with this product..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('reviewModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAuth();
+const API = Auth.API_BASE;
+document.getElementById('headerMount').innerHTML = renderHeader();
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+const SC = { pending:'badge-warning', confirmed:'badge-info', processing:'badge-info', shipped:'badge-info', delivered:'badge-success', cancelled:'badge-danger' };
+const SB = { pending:'var(--orange)', confirmed:'var(--blue-mid)', processing:'var(--teal)', shipped:'var(--teal)', delivered:'var(--green)', cancelled:'var(--red)' };
+
+let cancelOrderId = null, returnOrderId = null, reviewProductId = null, reviewOrderId = null, selectedRating = 0;
+
+// ── Panel switching ────────────────────────────────────────────
+function show(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.side-nav button,.side-nav a').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn?.classList.add('active');
+  if (id==='wishlist') loadWishlist();
+  if (id==='address')  loadAddresses();
+}
+
+// ── Load user profile ─────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const res  = await Auth.authFetch('/user/profile');
+    const ct   = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) return;
+    const user = await res.json();
+    document.getElementById('sidebarName').textContent  = user.name;
+    document.getElementById('sidebarEmail').textContent = user.email;
+    document.getElementById('avatarEl').textContent     = user.name[0].toUpperCase();
+    document.getElementById('pName').value  = user.name;
+    document.getElementById('pPhone').value = user.phone||'';
+    document.getElementById('pEmail').value = user.email;
+  } catch(e) {
+    const u = Auth.getUser();
+    if (u) { document.getElementById('sidebarName').textContent=u.name; document.getElementById('sidebarEmail').textContent=u.email; document.getElementById('avatarEl').textContent=u.name[0].toUpperCase(); }
+  }
+}
+
+// ── Load orders ───────────────────────────────────────────────
+async function loadOrders() {
+  let attempts=0;
+  while(attempts<15){
+    attempts++;
+    try {
+      const res = await Auth.authFetch('/orders');
+      const ct  = res.headers.get('content-type')||'';
+      if (!ct.includes('application/json')) throw new Error('not ready');
+      const orders = await res.json();
+      if (!orders.length) {
+        document.getElementById('ordersList').innerHTML =
+          '<div class="empty-state"><div style="font-size:3rem;margin-bottom:12px">📦</div>' +
+          '<h3>No orders yet</h3><p style="margin-bottom:20px">You have not placed any orders yet.</p>' +
+          '<a href="products.html" class="btn btn-primary">Start Shopping</a></div>';
+        return;
+      }
+      document.getElementById('ordersList').innerHTML = orders.map(o => {
+        const itemsText = (o.items||[]).map(i=>i.name+' x'+i.qty).join(' | ');
+        const addr = (()=>{ try{ const a=JSON.parse(o.shipping_address); return a.city+', '+a.state; } catch(e){ return ''; }})();
+        const isPaid = o.payment_status==='paid';
+        const canCancel  = !['delivered','cancelled','shipped'].includes(o.status);
+        const canReturn  = o.status==='delivered' && !o.return_requested;
+        const canReview  = o.status==='delivered';
+        return '<div class="pcard" style="border-left:4px solid '+(SB[o.status]||'var(--teal)')+'">'+
+          '<div class="pcard-header">'+
+            '<div><div class="order-num">Order #'+o.order_number+'</div><div class="order-date">'+new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+(addr?' · '+addr:'')+'</div></div>'+
+            '<div class="status-row">'+
+              '<span class="badge '+(SC[o.status]||'badge-grey')+'">'+o.status+'</span>'+
+              '<span style="font-size:.72rem;font-weight:600;color:'+(isPaid?'var(--green)':'var(--orange)')+'">'+
+                (isPaid?'✅ Paid':o.payment_method==='cod'?'💵 COD':'⏳ Pending')+
+              '</span>'+
+              (o.return_requested?'<span class="badge badge-warning">Return Requested</span>':'')+
+            '</div>'+
+          '</div>'+
+          '<div class="pcard-body">'+
+            '<div class="items-preview">'+itemsText+'</div>'+
+            (o.tracking_number?'<div class="tracking-chip">🚚 Tracking: '+o.tracking_number+'</div>':'')+
+          '</div>'+
+          '<div class="pcard-footer">'+
+            '<span style="font-weight:700;color:var(--red)">Rs.'+parseFloat(o.total).toLocaleString('en-IN',{minimumFractionDigits:2})+'</span>'+
+            '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+              '<button class="btn btn-outline btn-sm" onclick="viewOrderDetail('+o.id+')">View Details</button>'+
+              (canCancel?'<button class="btn btn-sm" style="background:#fff3cd;color:#856404;border:1px solid #ffd;cursor:pointer" onclick="openCancel('+o.id+')">Cancel</button>':'')+
+              (canReturn?'<button class="btn btn-sm" style="background:#cff4fc;color:#055160;border:1px solid #b6effb;cursor:pointer" onclick="openReturn('+o.id+')">Return</button>':'')+
+              (canReview?'<button class="btn btn-sm" style="background:#d1e7dd;color:#0a3622;border:1px solid #a3cfbb;cursor:pointer" onclick="openReview('+o.id+','+JSON.stringify((o.items||[]).map(i=>({id:i.product_id,name:i.name}))).replace(/'/g,"\'")+'[0])">Review</button>':'')+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+      return;
+    } catch(e) {
+      document.getElementById('ordersList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Loading orders'+(attempts>1?' ('+attempts*3+'s)':'')+'...</div>';
+      await new Promise(r=>setTimeout(r,3000));
+    }
+  }
+}
+
+// ── Order Detail View ─────────────────────────────────────────
+async function viewOrderDetail(id) {
+  show('orderdetail', null);
+  document.getElementById('orderDetailContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Loading...</div>';
+  try {
+    const res  = await Auth.authFetch('/orders/'+id);
+    const data = await Auth.safeJson(res);
+    const o    = data;
+    const addr = (()=>{ try{ return JSON.parse(o.shipping_address); } catch(e){ return {}; }})();
+    const itemsHtml = (o.items||[]).map(i =>
+      '<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--grey-1)">'+
+      '<div style="width:52px;height:52px;background:var(--grey-1);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">'+
+        (i.image_url?'<img src="'+i.image_url+'" style="width:100%;height:100%;object-fit:contain">':'🖨️')+
+      '</div>'+
+      '<div style="flex:1"><div style="font-size:.84rem;font-weight:600">'+i.name+'</div>'+
+      '<div style="font-size:.75rem;color:var(--text-light)">Qty: '+i.qty+'</div>'+
+      '<div style="font-weight:700;color:var(--red);font-size:.88rem">Rs.'+(i.price*i.qty).toLocaleString('en-IN')+'</div></div></div>'
+    ).join('');
+    // Timeline events
+    const eventsHtml = (o.events||[]).length ? (o.events||[]).map(e =>
+      '<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--grey-1);font-size:.82rem">'+
+      '<div style="width:10px;height:10px;border-radius:50%;background:var(--teal);margin-top:4px;flex-shrink:0"></div>'+
+      '<div><div style="font-weight:600;text-transform:capitalize">'+e.status+'</div>'+
+      '<div style="color:var(--text-light)">'+e.note+'</div>'+
+      '<div style="font-size:.72rem;color:var(--text-light)">'+new Date(e.created_at).toLocaleString('en-IN')+'</div></div></div>'
+    ).join('') : '<div style="color:var(--text-light);font-size:.82rem;padding:8px 0">No events yet</div>';
+    document.getElementById('orderDetailContent').innerHTML =
+      '<div style="background:#fff;border-radius:14px;box-shadow:var(--card-shadow);padding:20px;margin-bottom:16px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">'+
+          '<h3 style="font-family:\'Syne\',sans-serif;margin:0">Order #'+o.order_number+'</h3>'+
+          '<span class="badge '+(SC[o.status]||'badge-grey')+'" style="font-size:.82rem">'+o.status.toUpperCase()+'</span>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'+
+          '<div><div style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);margin-bottom:3px">Order Date</div><div style="font-size:.85rem;font-weight:600">'+new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})+'</div></div>'+
+          '<div><div style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);margin-bottom:3px">Payment</div><div style="font-size:.85rem;font-weight:600">'+(o.payment_method==='cod'?'Cash on Delivery':'Online — '+(o.razorpay_payment_id||''))+'</div></div>'+
+          '<div><div style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);margin-bottom:3px">Payment Status</div><div style="font-size:.85rem;font-weight:600;color:'+(o.payment_status==='paid'?'var(--green)':'var(--orange)')+'">'+( o.payment_status==='paid'?'✅ Paid':'⏳ Pending')+'</div></div>'+
+          '<div><div style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);margin-bottom:3px">Total</div><div style="font-size:.95rem;font-weight:700;color:var(--red)">Rs.'+parseFloat(o.total).toLocaleString('en-IN',{minimumFractionDigits:2})+'</div></div>'+
+        '</div>'+
+        (o.tracking_number?'<div style="background:var(--teal-light);border:1px solid var(--teal);border-radius:8px;padding:12px;margin-bottom:12px;font-size:.85rem">🚚 Tracking: <strong>'+o.tracking_number+'</strong>'+(o.tracking_url?'<br/><a href="'+o.tracking_url+'" target="_blank" style="color:var(--teal)">Track on courier site →</a>':'')+'</div>':'')+
+        '<h4 style="font-size:.88rem;margin:0 0 8px">📍 Shipping Address</h4>'+
+        '<div style="background:var(--grey-1);border-radius:8px;padding:10px;font-size:.82rem;margin-bottom:16px"><strong>'+addr.name+'</strong> | '+addr.phone+'<br/>'+addr.line+', '+addr.city+', '+addr.state+' – '+addr.pin+'</div>'+
+        '<h4 style="font-size:.88rem;margin:0 0 8px">📦 Items</h4>'+itemsHtml+
+      '</div>'+
+      '<div style="background:#fff;border-radius:14px;box-shadow:var(--card-shadow);padding:20px">'+
+        '<h4 style="font-family:\'Syne\',sans-serif;margin:0 0 12px;font-size:.9rem">📋 Order Timeline</h4>'+
+        eventsHtml+
+      '</div>';
+  } catch(e) {
+    document.getElementById('orderDetailContent').innerHTML = '<div class="empty-state"><h3>Could not load order details</h3></div>';
+  }
+}
+
+// ── Cancel Order ──────────────────────────────────────────────
+function openCancel(orderId) {
+  cancelOrderId = orderId;
+  document.getElementById('cancelReason').value = '';
+  document.getElementById('cancelModal').classList.add('open');
+}
+document.getElementById('cancelReason').addEventListener('change', function() {
+  document.getElementById('cancelReasonOther').style.display = this.value==='Other' ? 'block' : 'none';
+});
+async function confirmCancel() {
+  if (!cancelOrderId) return;
+  const reason = document.getElementById('cancelReason').value || document.getElementById('cancelReasonOther').value;
+  if (!reason) { showToast('Please select a cancellation reason', 'error'); return; }
+  try {
+    const res  = await Auth.authFetch('/orders/'+cancelOrderId+'/cancel', { method:'POST', body:JSON.stringify({ reason }) });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('cancelModal').classList.remove('open');
+    showToast('Order cancelled. '+( data.message || ''), 'success');
+    await loadOrders();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Return Order ──────────────────────────────────────────────
+function openReturn(orderId) {
+  returnOrderId = orderId;
+  document.getElementById('returnReason').value = '';
+  document.getElementById('returnModal').classList.add('open');
+}
+async function confirmReturn() {
+  if (!returnOrderId) return;
+  const reason = document.getElementById('returnReason').value;
+  if (!reason) { showToast('Please select a return reason', 'error'); return; }
+  try {
+    const res  = await Auth.authFetch('/orders/'+returnOrderId+'/return', { method:'POST', body:JSON.stringify({ reason }) });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('returnModal').classList.remove('open');
+    showToast(data.message || 'Return request submitted', 'success');
+    await loadOrders();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Reviews ───────────────────────────────────────────────────
+function openReview(orderId, product) {
+  reviewOrderId   = orderId;
+  reviewProductId = product?.id;
+  selectedRating  = 0;
+  document.getElementById('reviewProductName').textContent = product?.name || 'Product';
+  document.getElementById('reviewTitle').value   = '';
+  document.getElementById('reviewComment').value = '';
+  document.getElementById('reviewAlert').innerHTML = '';
+  document.querySelectorAll('.star-btn').forEach(b=>b.textContent='☆');
+  document.getElementById('reviewModal').classList.add('open');
+}
+function setRating(n) {
+  selectedRating = n;
+  document.querySelectorAll('.star-btn').forEach((b,i) => b.textContent = i<n ? '⭐' : '☆');
+}
+async function submitReview() {
+  if (!selectedRating) { document.getElementById('reviewAlert').innerHTML='<div class="alert alert-error">Please select a star rating</div>'; return; }
+  const comment = document.getElementById('reviewComment').value.trim();
+  if (!comment) { document.getElementById('reviewAlert').innerHTML='<div class="alert alert-error">Please write your review</div>'; return; }
+  try {
+    const res  = await Auth.authFetch('/products/'+reviewProductId+'/reviews', { method:'POST', body:JSON.stringify({ rating:selectedRating, title:document.getElementById('reviewTitle').value.trim(), comment }) });
+    const data = await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('reviewModal').classList.remove('open');
+    showToast('Review submitted successfully! Thank you.', 'success');
+  } catch(e) { document.getElementById('reviewAlert').innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+
+// ── Wishlist ──────────────────────────────────────────────────
+async function loadWishlist() {
+  try {
+    const res  = await Auth.authFetch('/wishlist');
+    const ct   = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) { document.getElementById('wishlistContent').innerHTML='<div class="empty-state"><h3>Could not load wishlist</h3></div>'; return; }
+    const list = await res.json();
+    if (!list.length) { document.getElementById('wishlistContent').innerHTML='<div class="empty-state"><div style="font-size:3rem;margin-bottom:12px">❤️</div><h3>Your wishlist is empty</h3><p style="margin-bottom:20px">Save products you love</p><a href="products.html" class="btn btn-primary">Browse Products</a></div>'; return; }
+    document.getElementById('wishlistContent').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">'+
+      list.map(w => {
+        const p = w.product;
+        return '<div style="background:#fff;border-radius:12px;box-shadow:var(--card-shadow);overflow:hidden">'+
+          '<a href="productdetails.html?id='+p.id+'"><div style="height:140px;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden">'+
+            (p.image_url?'<img src="'+p.image_url+'" style="width:100%;height:100%;object-fit:contain;padding:8px">':'🖨️')+
+          '</div></a>'+
+          '<div style="padding:12px"><div style="font-size:.82rem;font-weight:600;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+p.name+'</div>'+
+          '<div style="font-weight:700;color:var(--red);font-size:.9rem;margin-bottom:8px">Rs.'+p.price.toLocaleString('en-IN')+'</div>'+
+          '<div style="display:flex;gap:6px">'+
+            '<button class="btn btn-primary btn-sm" style="flex:1" onclick="CartStore.add({id:'+p.id+',name:\''+p.name.replace(/'/g,"\\\\'")+'\',price:'+p.price+',image_url:\''+(p.image_url||'')+'\'})">Add to Cart</button>'+
+            '<button class="btn btn-sm" style="background:var(--red);color:#fff;border:none;cursor:pointer" onclick="removeWishlist('+p.id+')">🗑️</button>'+
+          '</div></div></div>';
+      }).join('')+'</div>';
+  } catch(e) { document.getElementById('wishlistContent').innerHTML='<div class="empty-state"><h3>Could not load wishlist</h3></div>'; }
+}
+async function removeWishlist(pid) {
+  await Auth.authFetch('/wishlist/'+pid, { method:'POST' });
+  loadWishlist();
+  showToast('Removed from wishlist', 'success');
+}
+
+// ── Addresses ─────────────────────────────────────────────────
+async function loadAddresses() {
+  try {
+    const res  = await Auth.authFetch('/user/addresses');
+    const ct   = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) return;
+    const list = await res.json();
+    if (!list.length) { document.getElementById('addressList').innerHTML='<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:12px">📍</div><h3>No saved addresses</h3><p>Add your delivery address</p></div>'; return; }
+    document.getElementById('addressList').innerHTML = list.map(a =>
+      '<div class="addr-card'+(a.is_default?' default':'')+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+          '<div>'+
+            '<div style="font-weight:600;font-size:.88rem">'+a.name+(a.is_default?'<span class="addr-default-badge">DEFAULT</span>':'')+' | 📱 '+a.phone+'</div>'+
+            '<div style="font-size:.82rem;color:var(--text-light);margin-top:4px;line-height:1.6">'+a.line+'<br/>'+a.city+', '+a.state+' – '+a.pin+'</div>'+
+          '</div>'+
+          '<button class="btn btn-sm" style="background:var(--red);color:#fff;border:none;cursor:pointer" onclick="deleteAddress('+a.id+')">🗑️</button>'+
+        '</div>'+
+      '</div>'
+    ).join('');
+  } catch(e) {}
+}
+function toggleAddressForm() {
+  const f = document.getElementById('addAddressForm');
+  f.style.display = f.style.display==='none' ? 'block' : 'none';
+}
+async function saveAddress() {
+  const name=document.getElementById('aName').value.trim(), phone=document.getElementById('aPhone').value.trim();
+  const line=document.getElementById('aLine').value.trim(), city=document.getElementById('aCity').value.trim();
+  const state=document.getElementById('aState').value, pin=document.getElementById('aPin').value.trim();
+  if (!name||!phone||!line||!city||!state||!pin) { document.getElementById('addrAlert').innerHTML='<div class="alert alert-error">All fields are required</div>'; return; }
+  if (phone.length!==10) { document.getElementById('addrAlert').innerHTML='<div class="alert alert-error">Enter valid 10-digit phone</div>'; return; }
+  if (pin.length!==6)    { document.getElementById('addrAlert').innerHTML='<div class="alert alert-error">Enter valid 6-digit PIN</div>'; return; }
+  try {
+    const res = await Auth.authFetch('/user/addresses', { method:'POST', body:JSON.stringify({ name, phone, line, city, state, pin, is_default:document.getElementById('aDefault').checked }) });
+    if (!res.ok) throw new Error('Could not save address');
+    document.getElementById('addrAlert').innerHTML='';
+    toggleAddressForm();
+    showToast('Address saved successfully', 'success');
+    loadAddresses();
+    ['aName','aPhone','aLine','aCity','aPin'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('aState').value=''; document.getElementById('aDefault').checked=false;
+  } catch(e) { document.getElementById('addrAlert').innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+async function deleteAddress(id) {
+  if (!confirm('Delete this address?')) return;
+  await Auth.authFetch('/user/addresses/'+id, { method:'DELETE' });
+  showToast('Address deleted', 'success');
+  loadAddresses();
+}
+
+// ── Profile & Password ────────────────────────────────────────
+async function saveProfile() {
+  const name=document.getElementById('pName').value.trim(), phone=document.getElementById('pPhone').value.trim();
+  if (!name) return;
+  try {
+    const res=await Auth.authFetch('/user/profile',{method:'PUT',body:JSON.stringify({name,phone})});
+    const data=await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('sidebarName').textContent=name;
+    document.getElementById('profileAlert').innerHTML='<div class="alert alert-success">✅ Profile updated successfully</div>';
+    setTimeout(()=>document.getElementById('profileAlert').innerHTML='',3000);
+  } catch(e) { document.getElementById('profileAlert').innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+async function changePassword() {
+  const oldP=document.getElementById('oldPass').value, newP=document.getElementById('newPass').value, newP2=document.getElementById('newPass2').value;
+  if (!oldP||!newP) return;
+  if (newP!==newP2) { document.getElementById('passAlert').innerHTML='<div class="alert alert-error">Passwords do not match</div>'; return; }
+  if (newP.length<8) { document.getElementById('passAlert').innerHTML='<div class="alert alert-error">Password must be at least 8 characters</div>'; return; }
+  try {
+    const res=await Auth.authFetch('/user/password',{method:'PUT',body:JSON.stringify({current_password:oldP,new_password:newP})});
+    const data=await Auth.safeJson(res);
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('passAlert').innerHTML='<div class="alert alert-success">✅ Password changed successfully</div>';
+    document.getElementById('oldPass').value=document.getElementById('newPass').value=document.getElementById('newPass2').value='';
+  } catch(e) { document.getElementById('passAlert').innerHTML='<div class="alert alert-error">'+e.message+'</div>'; }
+}
+
+// Init
+loadProfile();
+loadOrders();
+</script>
+</body>
+</html>

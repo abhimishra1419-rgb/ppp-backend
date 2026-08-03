@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Dashboard – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body{display:flex;min-height:100vh;flex-direction:column}
+    .admin-wrap{display:flex;flex:1}
+    .admin-sidebar{width:260px;background:var(--blue-dark);color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+    .sidebar-logo{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo strong{font-family:'Syne',sans-serif;font-size:1rem;display:block}
+    .sidebar-logo span{font-size:.72rem;opacity:.6}
+    .admin-nav{flex:1;padding:12px 0}
+    .admin-nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,.75);text-decoration:none;font-size:.88rem;transition:.2s}
+    .admin-nav a:hover,.admin-nav a.active{background:rgba(255,255,255,.12);color:#fff}
+    .admin-nav a.active{border-left:3px solid var(--teal)}
+    .admin-nav .sec-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;opacity:.5;padding:16px 20px 6px}
+    .sidebar-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+    .sidebar-bottom a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
+    .admin-main{flex:1;overflow-x:hidden}
+    .admin-topbar{background:#fff;border-bottom:1px solid var(--grey-1);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .admin-topbar h2{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--blue-dark)}
+    .admin-user{display:flex;align-items:center;gap:10px;font-size:.85rem}
+    .admin-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem}
+    .admin-content{padding:28px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+    .stat-card{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;border-top:4px solid transparent}
+    .stat-card.blue{border-top-color:var(--blue-mid)}
+    .stat-card.green{border-top-color:var(--green)}
+    .stat-card.teal{border-top-color:var(--teal)}
+    .stat-card.orange{border-top-color:var(--orange)}
+    .stat-card.red{border-top-color:var(--red)}
+    .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+    .stat-card.blue .stat-icon{background:#e8f0fe}
+    .stat-card.green .stat-icon{background:#dcfce7}
+    .stat-card.teal .stat-icon{background:var(--teal-light)}
+    .stat-card.orange .stat-icon{background:#fff7ed}
+    .stat-card.red .stat-icon{background:#fee2e2}
+    .stat-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--blue-dark)}
+    .stat-label{font-size:.75rem;color:var(--text-light);margin-top:2px}
+    .card{background:#fff;border-radius:16px;padding:24px;box-shadow:var(--card-shadow);margin-bottom:20px}
+    .card h3{font-family:'Syne',sans-serif;font-size:.95rem;margin-bottom:16px;color:var(--blue-dark);display:flex;justify-content:space-between;align-items:center}
+    .mini-table{width:100%;border-collapse:collapse}
+    .mini-table th{font-size:.75rem;color:var(--text-light);padding:8px 12px;border-bottom:1px solid var(--grey-1);text-align:left;font-weight:600}
+    .mini-table td{font-size:.82rem;padding:11px 12px;border-bottom:1px solid var(--grey-1);vertical-align:middle}
+    .mini-table tr:hover td{background:var(--grey-1)}
+    .quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:20px}
+    .qa-card{background:#fff;border-radius:12px;padding:18px;text-align:center;text-decoration:none;color:var(--text);box-shadow:var(--card-shadow);transition:.2s;border:1.5px solid transparent}
+    .qa-card:hover{border-color:var(--teal);transform:translateY(-2px)}
+    .qa-icon{font-size:2rem;margin-bottom:8px}
+    .qa-label{font-size:.85rem;font-weight:600}
+    .empty-orders{text-align:center;padding:40px;color:var(--text-light);font-size:.88rem}
+    @media(max-width:900px){.admin-sidebar{display:none}}
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="admin-wrap">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo"><strong>Printer Spare Parts</strong><span>Admin Panel</span></div>
+    <nav class="admin-nav">
+      <div class="sec-lbl">Main</div>
+      <a href="admindashboard.html" class="active">📊 Dashboard</a>
+      <a href="adminorder.html">📦 Orders</a>
+      <a href="adminproduct.html">🛒 Products</a>
+      <div class="sec-lbl">Settings</div>
+      <a href="admincontrol.html">🔧 Full Control</a>
+      <a href="adminprofile.html">👤 My Profile</a>
+      <a href="adminsetting.html">⚙️ Page Content &amp; Settings</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="index.html" target="_blank">🌐 View Store</a>
+      <a href="#" onclick="Auth.logout()" style="color:#f87171">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h2>📊 Dashboard</h2>
+      <div class="admin-user">
+        <span style="color:var(--text-light);font-size:.8rem">Welcome,</span>
+        <div class="admin-avatar" id="adminInitial">A</div>
+        <span id="adminNameDisplay">Admin</span>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <!-- Real stats loaded from API -->
+      <div class="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">📦</div><div><div class="stat-val" id="statOrders">—</div><div class="stat-label">Total Orders</div></div></div>
+        <div class="stat-card green"><div class="stat-icon">💰</div><div><div class="stat-val" id="statRevenue">—</div><div class="stat-label">Revenue (Paid)</div></div></div>
+        <div class="stat-card teal"><div class="stat-icon">🛒</div><div><div class="stat-val" id="statProducts">—</div><div class="stat-label">Active Products</div></div></div>
+        <div class="stat-card orange"><div class="stat-icon">👥</div><div><div class="stat-val" id="statUsers">—</div><div class="stat-label">Customers</div></div></div>
+        <div class="stat-card red"><div class="stat-icon">⏳</div><div><div class="stat-val" id="statPending">—</div><div class="stat-label">Pending Orders</div></div></div>
+      </div>
+
+      <!-- Recent Orders - loaded from real API -->
+      <div class="card">
+        <h3>Recent Orders <a href="adminorder.html" style="font-size:.8rem;color:var(--teal);font-weight:600;text-decoration:none">View All →</a></h3>
+        <div style="overflow-x:auto">
+          <table class="mini-table">
+            <thead><tr><th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+            <tbody id="recentOrdersBody">
+              <tr><td colspan="8" class="empty-orders">⏳ Loading orders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <a href="adminproduct.html" class="qa-card"><div class="qa-icon">➕</div><div class="qa-label">Add Product</div></a>
+        <a href="adminorder.html?status=pending" class="qa-card"><div class="qa-icon">📋</div><div class="qa-label">Pending Orders</div></a>
+        <a href="adminorder.html?status=shipped" class="qa-card"><div class="qa-icon">🚚</div><div class="qa-label">Shipped Orders</div></a>
+        <a href="adminsetting.html" class="qa-card"><div class="qa-icon">⚙️</div><div class="qa-label">Site Settings</div></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAdmin();
+const API = Auth.API_BASE;
+
+const user = Auth.getUser();
+if (user) {
+  document.getElementById('adminNameDisplay').textContent = user.name;
+  document.getElementById('adminInitial').textContent     = user.name[0].toUpperCase();
+}
+
+const STATUS_COLOR = {
+  pending:'badge-warning', confirmed:'badge-info',
+  processing:'badge-info', shipped:'badge-info',
+  delivered:'badge-success', cancelled:'badge-danger'
+};
+
+async function loadDashboard() {
+  let attempts = 0;
+  while (attempts < 15) {
+    attempts++;
+    try {
+      const token = Auth.getToken();
+      const headers = { Authorization: 'Bearer ' + token };
+
+      // Load stats
+      const sr  = await fetch(API + '/admin/stats', { headers, cache: 'no-store' });
+      const ct  = sr.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) throw new Error('not ready');
+      const stats = await sr.json();
+
+      document.getElementById('statOrders').textContent   = (stats.orders || 0).toLocaleString('en-IN');
+      document.getElementById('statRevenue').textContent  = 'Rs.' + Math.round(stats.revenue || 0).toLocaleString('en-IN');
+      document.getElementById('statProducts').textContent = (stats.products || 0).toLocaleString('en-IN');
+      document.getElementById('statUsers').textContent    = ((stats.users || 1) - 1).toLocaleString('en-IN'); // subtract admin
+      document.getElementById('statPending').textContent  = (stats.pending || 0).toLocaleString('en-IN');
+
+      // Load recent orders
+      const or   = await fetch(API + '/admin/orders?limit=10', { headers, cache: 'no-store' });
+      const oData = await or.json();
+      const orders = oData.orders || [];
+
+      if (!orders.length) {
+        document.getElementById('recentOrdersBody').innerHTML =
+          '<tr><td colspan="8" class="empty-orders">No orders yet. Share your store link to get your first order!</td></tr>';
+        return;
+      }
+
+      document.getElementById('recentOrdersBody').innerHTML = orders.map(o =>
+        '<tr>' +
+        '<td><strong>' + o.order_number + '</strong></td>' +
+        '<td>' + (o.customer_name || '—') + '</td>' +
+        '<td style="color:var(--text-light);font-size:.78rem;max-width:180px">' + (o.items || '—').substring(0,50) + (o.items?.length>50?'…':'') + '</td>' +
+        '<td style="font-weight:700;color:var(--red)">Rs.' + parseFloat(o.total).toLocaleString('en-IN') + '</td>' +
+        '<td><span style="font-size:.75rem;font-weight:600;color:' + (o.payment_status==='paid'?'var(--green)':'var(--orange)') + '">' +
+          (o.payment_status==='paid' ? '✅ Paid' : o.payment_method==='cod' ? '💵 COD' : '⏳ Pending') + '</span></td>' +
+        '<td><span class="badge ' + (STATUS_COLOR[o.status] || 'badge-grey') + '">' + o.status + '</span></td>' +
+        '<td style="font-size:.75rem;color:var(--text-light)">' + new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + '</td>' +
+        '<td><a href="adminorder.html" class="btn btn-outline btn-sm">Manage</a></td>' +
+        '</tr>'
+      ).join('');
+      return;
+    } catch(e) {
+      document.getElementById('recentOrdersBody').innerHTML =
+        '<tr><td colspan="8" class="empty-orders">⏳ Connecting to server' + (attempts>1?' ('+attempts*3+'s)':'') + '...</td></tr>';
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  document.getElementById('recentOrdersBody').innerHTML =
+    '<tr><td colspan="8" class="empty-orders">Could not load. <a href="javascript:location.reload()" style="color:var(--teal)">Refresh</a></td></tr>';
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

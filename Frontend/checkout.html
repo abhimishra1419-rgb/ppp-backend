@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Checkout – Printer Spare Parts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    .checkout-layout{display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start}
+    .step-bar{display:flex;margin-bottom:32px;align-items:center}
+    .step-item{flex:1;display:flex;align-items:center}
+    .step-num{width:34px;height:34px;border-radius:50%;border:2px solid var(--grey-2);background:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;transition:.3s}
+    .step-num.active{background:var(--blue-dark);border-color:var(--blue-dark);color:#fff}
+    .step-num.done{background:var(--green);border-color:var(--green);color:#fff}
+    .step-label{font-size:.78rem;font-weight:600;color:var(--text-light);margin-left:8px}
+    .step-label.active{color:var(--blue-dark)}
+    .step-line{flex:1;height:2px;background:var(--grey-2);margin:0 8px}
+    .step-line.done{background:var(--green)}
+    .cs{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);margin-bottom:20px;overflow:hidden}
+    .cs-header{background:var(--blue-dark);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
+    .cs-header h3{font-family:'Syne',sans-serif;font-size:.95rem}
+    .cs-body{padding:20px}
+    .pay-opt{border:2px solid var(--grey-2);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:12px}
+    .pay-opt:hover,.pay-opt.sel{border-color:var(--teal);background:var(--teal-light)}
+    .pay-opt input[type=radio]{accent-color:var(--teal);width:18px;height:18px;flex-shrink:0}
+    .pay-icon{font-size:1.6rem;width:36px;text-align:center}
+    .pay-name{font-size:.9rem;font-weight:600}
+    .pay-sub{font-size:.75rem;color:var(--text-light);margin-top:2px}
+    .pay-badge{margin-left:auto;background:var(--green);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px}
+    .order-summary{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);overflow:hidden;position:sticky;top:80px}
+    .os-header{background:var(--blue-dark);color:#fff;padding:16px 20px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+    .os-body{padding:20px}
+    .os-item{display:flex;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--grey-1)}
+    .os-item-img{width:52px;height:52px;background:var(--grey-1);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .os-item-img img{width:100%;height:100%;object-fit:contain}
+    .os-item-name{font-size:.8rem;font-weight:600;line-height:1.3}
+    .os-item-price{font-size:.85rem;font-weight:700;color:var(--red);margin-top:4px}
+    .os-row{display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:10px}
+    .os-total{display:flex;justify-content:space-between;font-size:1.05rem;font-weight:700;padding-top:12px;border-top:2px solid var(--grey-1)}
+    .pay-btn{width:100%;padding:15px;background:var(--blue-dark);color:#fff;border:none;border-radius:10px;font-size:1rem;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;transition:.2s;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+    .pay-btn:hover{background:var(--teal)}
+    .pay-btn:disabled{opacity:.6;cursor:not-allowed}
+    .secure-note{text-align:center;font-size:.72rem;color:var(--text-light);margin-top:8px}
+    @media(max-width:900px){.checkout-layout{grid-template-columns:1fr}.order-summary{position:static}}
+  </style>
+</head>
+<body>
+<div id="headerMount"></div>
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Checkout</h1>
+    <div class="breadcrumb"><a href="index.html">Home</a> &rarr; <a href="cart.html">Cart</a> &rarr; Checkout</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="step-bar">
+    <div class="step-item"><div class="step-num done">✓</div><span class="step-label">Cart</span><div class="step-line done"></div></div>
+    <div class="step-item"><div class="step-num active">2</div><span class="step-label active">Checkout</span><div class="step-line"></div></div>
+    <div class="step-item"><div class="step-num">3</div><span class="step-label">Payment</span><div class="step-line"></div></div>
+    <div class="step-item"><div class="step-num">4</div><span class="step-label">Confirmed</span></div>
+  </div>
+
+  <div id="mainAlert"></div>
+
+  <div class="checkout-layout">
+    <div>
+      <!-- Shipping Address -->
+      <div class="cs">
+        <div class="cs-header"><h3>📍 Shipping Address</h3></div>
+        <div class="cs-body">
+          <div id="savedAddressSection" style="display:none;margin-bottom:16px">
+            <label class="form-label">Use Saved Address</label>
+            <select id="savedAddrSelect" class="form-control form-select" onchange="fillSavedAddress(this.value)">
+              <option value="">Select a saved address</option>
+            </select>
+            <div style="font-size:.75rem;color:var(--text-light);margin-top:4px">Or fill in manually below</div>
+            <hr style="margin:14px 0;border-color:var(--grey-1)"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="aName" class="form-control" placeholder="Full Name"/></div>
+            <div class="form-group"><label class="form-label">Phone *</label><input type="tel" id="aPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10"/></div>
+          </div>
+          <div class="form-group"><label class="form-label">Address Line *</label><input type="text" id="aLine" class="form-control" placeholder="House No, Street, Area, Landmark"/></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">City *</label><input type="text" id="aCity" class="form-control" placeholder="City"/></div>
+            <div class="form-group"><label class="form-label">State *</label>
+              <select id="aState" class="form-control form-select">
+                <option value="">Select State</option>
+                <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Delhi</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">PIN Code *</label><input type="text" id="aPin" class="form-control" placeholder="6-digit PIN code" maxlength="6"/></div>
+            <div class="form-group"><label class="form-label">Alternate Phone</label><input type="tel" id="aPhone2" class="form-control" placeholder="Optional"/></div>
+          </div>
+          <div class="form-group"><label class="form-label">Order Notes (optional)</label><textarea id="aNotes" class="form-control" rows="2" placeholder="Delivery instructions, landmark etc."></textarea></div>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="cs">
+        <div class="cs-header"><h3>💳 Payment Method</h3></div>
+        <div class="cs-body">
+          <div class="pay-opt sel" id="opt-online" onclick="selectPay('online',this)">
+            <input type="radio" name="pay" id="pay-online" checked/>
+            <span class="pay-icon">💳</span>
+            <div>
+              <div class="pay-name">Pay Online</div>
+              <div class="pay-sub">UPI (GPay, PhonePe, Paytm) • Credit/Debit Card • Net Banking • Wallets</div>
+            </div>
+            <span class="pay-badge">RECOMMENDED</span>
+          </div>
+          <div class="pay-opt" id="opt-cod" onclick="selectPay('cod',this)">
+            <input type="radio" name="pay" id="pay-cod"/>
+            <span class="pay-icon">💵</span>
+            <div>
+              <div class="pay-name">Cash on Delivery (COD)</div>
+              <div class="pay-sub">Pay cash when your order is delivered.</div>
+            </div>
+          </div>
+          <div id="cod-note" style="display:none;background:#fef3c7;border-radius:8px;padding:12px;font-size:.82rem;color:#92400e;margin-top:8px">
+            ⚠️ COD orders are confirmed only after our team manually verifies. Online payment gets instant confirmation.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <div class="os-header">🧾 Order Summary</div>
+      <div class="os-body">
+        <div id="summaryItems"></div>
+        <div class="os-row"><span>Subtotal (excl. GST)</span><span>Rs.<span id="sumSub">0</span></span></div>
+        <div class="os-row"><span>GST @<span id="sumGstRate">18</span>%</span><span>Rs.<span id="sumGST">0</span></span></div>
+        <div class="os-row">
+          <span>Shipping</span>
+          <span id="sumShip" style="color:var(--green);font-weight:600">Calculating...</span>
+        </div>
+        <div id="sumFreeMsg"   style="display:none;font-size:.75rem;color:var(--green);padding:2px 0 6px">🎉 FREE shipping applied!</div>
+        <div id="sumAlmostMsg" style="display:none;font-size:.75rem;color:var(--orange);padding:2px 0 6px">🚚 Add Rs.<span id="sumAmtForFree">0</span> more for FREE shipping</div>
+        <div class="os-total">
+          <span>Total (incl. GST + Shipping)</span>
+          <span style="color:var(--red)">Rs.<span id="sumTotal">0</span></span>
+        </div>
+        <button class="pay-btn" id="payBtn" onclick="proceedToPayment()">
+          <span id="payBtnText">Pay Now</span>
+        </button>
+        <p class="secure-note">🔒 256-bit SSL secured • All prices include GST + Shipping</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footerMount"></div>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+Auth.requireAuth();
+const API = Auth.API_BASE;
+document.getElementById('headerMount').innerHTML = renderHeader();
+document.getElementById('footerMount').innerHTML = renderFooter();
+
+var selectedPay = 'online';
+
+// ── Init ──────────────────────────────────────────────────────
+var user = Auth.getUser();
+if (user) {
+  document.getElementById('aName').value = user.name || '';
+  loadSavedAddresses();
+}
+loadSiteSettings().then(function(s) { if (s) window._checkoutSettings = s; });
+checkPendingPayment();
+renderSummary();
+
+// ── Saved Addresses ───────────────────────────────────────────
+async function loadSavedAddresses() {
+  if (!Auth.isLoggedIn()) return;
+  try {
+    var res  = await Auth.authFetch('/user/addresses');
+    var ct   = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return;
+    var list = await res.json();
+    if (!list || !list.length) return;
+    var sel = document.getElementById('savedAddrSelect');
+    list.forEach(function(a) {
+      var opt = document.createElement('option');
+      opt.value = JSON.stringify(a);
+      opt.textContent = a.name + ' — ' + a.line + ', ' + a.city + (a.is_default ? ' (Default)' : '');
+      sel.appendChild(opt);
+    });
+    document.getElementById('savedAddressSection').style.display = 'block';
+    var def = list.find(function(a) { return a.is_default; }) || list[0];
+    if (def) fillSavedAddress(JSON.stringify(def));
+  } catch(e) {}
+}
+
+function fillSavedAddress(val) {
+  if (!val) return;
+  try {
+    var a = JSON.parse(val);
+    document.getElementById('aName').value  = a.name  || '';
+    document.getElementById('aPhone').value = a.phone || '';
+    document.getElementById('aLine').value  = a.line  || '';
+    document.getElementById('aCity').value  = a.city  || '';
+    document.getElementById('aState').value = a.state || '';
+    document.getElementById('aPin').value   = a.pin   || '';
+  } catch(e) {}
+}
+
+// ── Payment Method ────────────────────────────────────────────
+function selectPay(method, el) {
+  selectedPay = method;
+  document.querySelectorAll('.pay-opt').forEach(function(e) { e.classList.remove('sel'); });
+  el.classList.add('sel');
+  el.querySelector('input[type=radio]').checked = true;
+  document.getElementById('cod-note').style.display = method === 'cod' ? 'block' : 'none';
+  updatePayBtn();
+}
+
+function updatePayBtn() {
+  var txt = document.getElementById('payBtnText');
+  if (!txt) return;
+  var tot = document.getElementById('sumTotal').textContent || '0';
+  txt.textContent = selectedPay === 'cod' ? 'Place COD Order — Rs.' + tot : 'Pay Rs.' + tot;
+}
+
+// ── Order Summary ─────────────────────────────────────────────
+function renderSummary() {
+  var items = CartStore.getAll();
+  if (!items.length) { window.location.href = 'cart.html'; return; }
+
+  document.getElementById('summaryItems').innerHTML = items.map(function(i) {
+    var name = i.name || '';
+    return '<div class="os-item">' +
+      '<div class="os-item-img">' + (i.image_url ? '<img src="'+i.image_url+'" alt="">' : '🖨️') + '</div>' +
+      '<div style="flex:1">' +
+        '<div class="os-item-name">' + name.substring(0,55) + (name.length>55?'...':'') + '</div>' +
+        '<div style="font-size:.72rem;color:var(--text-light)">Qty: '+i.qty+'</div>' +
+        '<div class="os-item-price">Rs.'+(i.price*i.qty).toLocaleString('en-IN')+'</div>' +
+      '</div></div>';
+  }).join('');
+
+  var sub = CartStore.subtotal();
+  var gst = CartStore.gst();
+  document.getElementById('sumSub').textContent = sub.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('sumGST').textContent = gst.toLocaleString('en-IN',{minimumFractionDigits:2});
+
+  var s = getCachedSettings();
+  if (s && s.gst_rate) document.getElementById('sumGstRate').textContent = s.gst_rate;
+
+  // Show instant estimate
+  var initShip = CartStore.shipping();
+  document.getElementById('sumTotal').textContent = (sub+gst+initShip).toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('sumShip').textContent  = 'Calculating...';
+  document.getElementById('sumShip').style.color  = 'var(--text-light)';
+  updatePayBtn();
+
+  // Load real shipping from API
+  loadShipping().then(function(data) {
+    var ship = (data && data.shipping !== undefined) ? data.shipping : initShip;
+    var free = ship === 0;
+    document.getElementById('sumShip').textContent = free ? 'FREE' : 'Rs.'+ship.toLocaleString('en-IN',{minimumFractionDigits:2});
+    document.getElementById('sumShip').style.color = free ? 'var(--green)' : 'var(--text)';
+    if (data) {
+      document.getElementById('sumFreeMsg').style.display   = free ? 'block' : 'none';
+      document.getElementById('sumAlmostMsg').style.display = (!free && data.amount_for_free > 0) ? 'block' : 'none';
+      if (data.amount_for_free > 0 && !free)
+        document.getElementById('sumAmtForFree').textContent = data.amount_for_free.toLocaleString('en-IN',{maximumFractionDigits:0});
+    }
+    document.getElementById('sumTotal').textContent = (sub+gst+ship).toLocaleString('en-IN',{minimumFractionDigits:2});
+    updatePayBtn();
+  });
+}
+
+// ── Address ───────────────────────────────────────────────────
+function getAddress() {
+  return {
+    name:   document.getElementById('aName').value.trim(),
+    phone:  document.getElementById('aPhone').value.trim(),
+    line:   document.getElementById('aLine').value.trim(),
+    city:   document.getElementById('aCity').value.trim(),
+    state:  document.getElementById('aState').value,
+    pin:    document.getElementById('aPin').value.trim(),
+    phone2: document.getElementById('aPhone2').value.trim(),
+  };
+}
+
+function validateAddress() {
+  var a = getAddress();
+  if (!a.name)  { showAlert('Please enter your full name'); return false; }
+  if (!a.phone || a.phone.length !== 10 || !/^\d+$/.test(a.phone)) { showAlert('Please enter a valid 10-digit phone number'); return false; }
+  if (!a.line)  { showAlert('Please enter your address'); return false; }
+  if (!a.city)  { showAlert('Please enter your city'); return false; }
+  if (!a.state) { showAlert('Please select your state'); return false; }
+  if (!a.pin || a.pin.length !== 6 || !/^\d+$/.test(a.pin)) { showAlert('Please enter a valid 6-digit PIN code'); return false; }
+  return true;
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function showAlert(msg, type) {
+  type = type || 'error';
+  var el = document.getElementById('mainAlert');
+  if (!el) return;
+  el.innerHTML = '<div class="alert alert-'+type+'">'+msg+'</div>';
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (type !== 'info') setTimeout(function() { if (el) el.innerHTML = ''; }, 6000);
+}
+
+function setLoading(loading, msg) {
+  var btn = document.getElementById('payBtn');
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    btn.innerHTML = '<span class="spinner"></span> ' + (msg || 'Please wait...');
+  } else {
+    btn.innerHTML = '<span id="payBtnText">Pay Now</span>';
+    updatePayBtn();
+  }
+}
+
+// ── Proceed to Payment ────────────────────────────────────────
+async function proceedToPayment() {
+  if (!validateAddress()) return;
+  var items = CartStore.getAll();
+  if (!items.length) { showAlert('Your cart is empty'); return; }
+  var address   = getAddress();
+  var notes     = document.getElementById('aNotes').value.trim();
+  var cartItems = items.map(function(i) { return { product_id: i.id, qty: i.qty }; });
+  if (selectedPay === 'cod') {
+    placeCODOrder(cartItems, address, notes);
+  } else {
+    placeOnlineOrder(cartItems, address, notes);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//   ONLINE PAYMENT — single clean try-catch, no nesting
+// ════════════════════════════════════════════════════════════
+async function placeOnlineOrder(cartItems, address, notes) {
+  setLoading(true, 'Connecting to payment gateway...');
+
+  // STEP 1: Create Razorpay order on backend (with retry for sleeping server)
+  var orderData = null;
+  for (var attempt = 1; attempt <= 10; attempt++) {
+    try {
+      if (attempt > 1) setLoading(true, 'Connecting... (' + (attempt*3) + 's)');
+      var res = await fetch(API + '/payment/create-order', {
+        method:  'POST',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer '+Auth.getToken() },
+        body:    JSON.stringify({ items:cartItems, shipping_address:address }),
+      });
+      var ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        await new Promise(function(r){ setTimeout(r,3000); });
+        continue;
+      }
+      var body = await res.json();
+      if (!res.ok) { showAlert(body.error || 'Could not create payment order', 'error'); setLoading(false); return; }
+      orderData = body;
+      break;
+    } catch(fetchErr) {
+      if (attempt < 10) { await new Promise(function(r){ setTimeout(r,3000); }); continue; }
+      showAlert('Server not responding. Please try again or use COD.', 'error');
+      setLoading(false);
+      return;
+    }
+  }
+
+  if (!orderData) {
+    showAlert('Could not connect to server. Please use Cash on Delivery.', 'error');
+    setLoading(false);
+    return;
+  }
+
+  // STEP 2: Validate order data
+  if (!orderData.key_id) {
+    showAlert('Payment gateway not configured. Please use Cash on Delivery or contact admin.', 'error');
+    setLoading(false);
+    return;
+  }
+  if (!orderData.amount || orderData.amount < 100) {
+    showAlert('Order amount is too small. Minimum is Rs.1.', 'error');
+    setLoading(false);
+    return;
+  }
+
+  setLoading(false);
+
+  // STEP 3: Open Razorpay popup
+  var siteName = (window._checkoutSettings && window._checkoutSettings.site_name) || 'PrintersReports';
+  var rzpOptions = {
+    key:         orderData.key_id,
+    amount:      orderData.amount,
+    currency:    orderData.currency || 'INR',
+    name:        siteName,
+    description: 'Printer Parts Order',
+    order_id:    orderData.razorpay_order_id,
+    prefill: {
+      name:    address.name  || '',
+      contact: address.phone || '',
+      email:   (Auth.getUser() && Auth.getUser().email) || '',
+    },
+    config: {
+      display: {
+        blocks: {
+          upi:  { name:'Pay via UPI',      instruments:[{method:'upi'}]        },
+          card: { name:'Pay via Card',     instruments:[{method:'card'}]       },
+          nb:   { name:'Net Banking',      instruments:[{method:'netbanking'}] },
+          wal:  { name:'Wallets',          instruments:[{method:'wallet'}]     },
+        },
+        sequence: ['block.upi','block.card','block.nb','block.wal'],
+        preferences: { show_default_blocks: true },
+      }
+    },
+    theme: { color:'#1a4298' },
+    modal: {
+      escape:         false,
+      backdropclose:  false,
+      ondismiss: function() {
+        showAlert('Payment cancelled. Your cart is saved.', 'info');
+        setLoading(false);
+      }
+    },
+    handler: function(response) {
+      handlePaymentSuccess(response, cartItems, address, notes);
+    }
+  };
+
+  try {
+    var rzp = new window.Razorpay(rzpOptions);
+    rzp.on('payment.failed', function(resp) {
+      var errMsg = (resp.error && resp.error.description) ? resp.error.description : 'Payment failed. Please try again.';
+      showAlert(errMsg, 'error');
+      setLoading(false);
+    });
+    rzp.open();
+  } catch(openErr) {
+    showAlert('Could not open payment window: ' + openErr.message, 'error');
+    setLoading(false);
+  }
+}
+
+// ── Handle successful payment capture ────────────────────────
+async function handlePaymentSuccess(response, cartItems, address, notes) {
+
+  function cleanup() {
+    localStorage.removeItem('ppp_pending_payment');
+    sessionStorage.removeItem('ppp_payment_fired');
+  }
+  function showPaymentIdMessage() {
+    cleanup();
+    setLoading(false);
+    document.getElementById('mainAlert').innerHTML =
+      '<div style="background:#fff;border:2px solid #22c55e;border-radius:14px;padding:24px;margin-bottom:16px">' +
+        '<div style="font-size:1.5rem;margin-bottom:8px">✅</div>' +
+        '<div style="font-weight:700;font-size:1rem;margin-bottom:8px;color:#166534">Payment Received Successfully!</div>' +
+        '<div style="font-size:.88rem;color:#555;margin-bottom:14px">Your payment was captured by Razorpay but our server could not auto-confirm the order. Please share your Payment ID with us on WhatsApp and we will confirm your order within 30 minutes.</div>' +
+        '<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:12px;margin-bottom:14px;text-align:center">' +
+          '<div style="font-size:.75rem;color:#166534;margin-bottom:4px;font-weight:600">YOUR PAYMENT ID</div>' +
+          '<div style="font-family:monospace;font-size:1.1rem;font-weight:800;color:#0d2c6b;letter-spacing:1px">' + response.razorpay_payment_id + '</div>' +
+        '</div>' +
+        '<div style="font-size:.8rem;color:#e53e3e;font-weight:600">⚠️ Do NOT pay again. Your money is safe.</div>' +
+      '</div>';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Save backup
+  var backup = {
+    razorpay_order_id:   response.razorpay_order_id,
+    razorpay_payment_id: response.razorpay_payment_id,
+    razorpay_signature:  response.razorpay_signature,
+    items:               cartItems,
+    shipping_address:    address,
+    notes:               notes,
+    timestamp:           Date.now(),
+  };
+  localStorage.setItem('ppp_pending_payment', JSON.stringify(backup));
+  sessionStorage.setItem('ppp_payment_fired', '1');
+  setLoading(true, 'Payment received! Confirming your order...');
+
+  // ── PHASE 1: Try /payment/verify (max 6 retries only for server-sleeping) ──
+  var verifyResult = null; // 'success' | 'client_error' | 'exhausted'
+  for (var i = 1; i <= 6; i++) {
+    if (i > 1) setLoading(true, 'Confirming your order... (' + i + '/6)');
+    try {
+      var vRes = await fetch(API + '/payment/verify', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + Auth.getToken() },
+        body:    JSON.stringify(backup),
+      });
+      var vCt = vRes.headers.get('content-type') || '';
+      if (!vCt.includes('application/json')) {
+        // Server not awake yet — wait and retry
+        await new Promise(function(r) { setTimeout(r, 4000); });
+        continue;
+      }
+      var vData = await vRes.json();
+      if (vRes.ok && vData.success) {
+        // ✅ Order confirmed
+        cleanup();
+        CartStore.clear();
+        window.location.href = 'order.html?order=' + vData.order_number + '&payment=online&paid=true';
+        return;
+      }
+      if (vRes.status >= 500) {
+        // Transient server error — retry
+        await new Promise(function(r) { setTimeout(r, 4000); });
+        continue;
+      }
+      // 4xx — definitive error from server, stop retrying verify
+      verifyResult = 'client_error';
+      break;
+    } catch(e) {
+      // Network error — retry
+      await new Promise(function(r) { setTimeout(r, 3000); });
+    }
+  }
+  if (verifyResult === null) verifyResult = 'exhausted'; // used all 6 retries
+
+  // ── PHASE 2: Try /payment/recover ONCE ──
+  setLoading(true, 'Trying order recovery...');
+  try {
+    var rRes = await fetch(API + '/payment/recover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + Auth.getToken() },
+      body:    JSON.stringify({
+        razorpay_payment_id: response.razorpay_payment_id,
+        items:               cartItems,
+        shipping_address:    address,
+      }),
+    });
+    var rCt = rRes.headers.get('content-type') || '';
+    if (rCt.includes('application/json')) {
+      var rData = await rRes.json();
+      if (rRes.ok && rData.success) {
+        // ✅ Recovered successfully
+        cleanup();
+        CartStore.clear();
+        window.location.href = 'order.html?order=' + rData.order_number + '&payment=online&paid=true';
+        return;
+      }
+    }
+  } catch(e) { /* fall through to Phase 3 */ }
+
+  // ── PHASE 3: Both failed — show payment ID clearly, stop ──
+  showPaymentIdMessage();
+}
+
+// ── Check pending payment silently on page load ──────────────
+async function checkPendingPayment() {
+  var backup = null;
+  try { backup = JSON.parse(localStorage.getItem('ppp_pending_payment') || 'null'); } catch(e){}
+  if (!backup || !backup.razorpay_payment_id) return;
+
+  var ageMinutes = (Date.now() - (backup.timestamp || 0)) / 60000;
+
+  // Clear if older than 15 minutes — stale data should never be retried
+  if (ageMinutes > 15) {
+    localStorage.removeItem('ppp_pending_payment');
+    return;
+  }
+
+  // Only resume if Razorpay actually fired in this browser session.
+  // sessionStorage is cleared when the tab is closed, so a fresh page
+  // visit (no payment made) will never have this flag set.
+  var paymentFiredThisSession = sessionStorage.getItem('ppp_payment_fired');
+  if (!paymentFiredThisSession) {
+    localStorage.removeItem('ppp_pending_payment');
+    return;
+  }
+
+  // Resume confirmation — payment was genuinely made this session
+  setLoading(true, 'Completing your previous order...');
+  await handlePaymentSuccess(
+    {
+      razorpay_order_id:   backup.razorpay_order_id,
+      razorpay_payment_id: backup.razorpay_payment_id,
+      razorpay_signature:  backup.razorpay_signature,
+    },
+    backup.items,
+    backup.shipping_address,
+    backup.notes
+  );
+}
+
+// ── Cash on Delivery ──────────────────────────────────────────
+async function placeCODOrder(cartItems, address, notes) {
+  setLoading(true, 'Placing your order...');
+  try {
+    var res = await fetch(API + '/orders/cod', {
+      method:  'POST',
+      headers: { 'Content-Type':'application/json', Authorization:'Bearer '+Auth.getToken() },
+      body:    JSON.stringify({ items:cartItems, shipping_address:address, notes:notes }),
+    });
+    var ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('Server is starting up. Please wait 30 seconds and try again.');
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Order failed. Please try again.');
+    CartStore.clear();
+    window.location.href = 'order.html?order='+data.order_number+'&payment=cod';
+  } catch(e) {
+    showAlert(e.message, 'error');
+    setLoading(false);
+  }
+}
+</script>
+</body>
+</html>
